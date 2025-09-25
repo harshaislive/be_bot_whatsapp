@@ -97,8 +97,8 @@ class EnterpriseWhatsAppBot {
             // API routes
             app.use('/api', apiRoutes);
 
-            // Start API server
-            const apiPort = config.server.port + 1; // Use port 3001 if main is 3000
+            // Start API server on main port
+            const apiPort = config.server.port; // Use main port 3000
             this.apiServer = app.listen(apiPort, () => {
                 console.log(`🌐 API Server running on port ${apiPort}`);
                 console.log(`📡 Endpoints available at http://localhost:${apiPort}/api`);

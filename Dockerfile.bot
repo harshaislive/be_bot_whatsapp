@@ -43,9 +43,7 @@ EXPOSE 3000
 # Switch to non-root user
 USER botuser
 
-# Simple health check for Coolify compatibility
-HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=3 \
-  CMD curl -f http://localhost:3000/api/status || exit 1
+# No Docker health check - let Coolify handle it
 
 # Start the bot
 CMD ["npm", "run", "start:prod"]
