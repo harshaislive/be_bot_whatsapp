@@ -41,7 +41,6 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-COPY --chown=nextjs:nodejs start.js ./start.js
 
 # Expose port
 EXPOSE 3000
@@ -51,5 +50,5 @@ USER nextjs
 
 # No Docker health check - Coolify handles health checks
 
-# Start the application with custom port handler
-CMD ["node", "start.js"]
+# Start the application directly with port override
+CMD ["sh", "-c", "export PORT=3000 && node server.js"]
