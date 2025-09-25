@@ -39,5 +39,9 @@ USER nextjs
 
 EXPOSE 3000
 
+# Simple health check that should work
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:3000/ || exit 1
+
 # Start the app - let Next.js use its default port
 CMD ["node", "server.js"]
