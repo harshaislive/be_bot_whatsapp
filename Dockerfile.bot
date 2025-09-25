@@ -43,9 +43,9 @@ EXPOSE 3000
 # Switch to non-root user
 USER botuser
 
-# Health check for bot
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:3000/api/status || exit 1
+# Health check disabled - let Coolify handle it
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+#   CMD curl -f http://localhost:3000/api/status || exit 1
 
 # Start the bot
 CMD ["npm", "run", "start:prod"]

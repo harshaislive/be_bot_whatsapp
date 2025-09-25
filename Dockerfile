@@ -48,16 +48,16 @@ EXPOSE 3000
 # Switch to non-root user
 USER nextjs
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD node -e "
-    const http = require('http');
-    const options = { hostname: 'localhost', port: 3000, path: '/api/status', timeout: 5000 };
-    const req = http.request(options, (res) => process.exit(res.statusCode === 200 ? 0 : 1));
-    req.on('error', () => process.exit(1));
-    req.on('timeout', () => process.exit(1));
-    req.end();
-  " || exit 1
+# Health check disabled - let Coolify handle it
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+#   CMD node -e "
+#     const http = require('http');
+#     const options = { hostname: 'localhost', port: 3000, path: '/api/status', timeout: 5000 };
+#     const req = http.request(options, (res) => process.exit(res.statusCode === 200 ? 0 : 1));
+#     req.on('error', () => process.exit(1));
+#     req.on('timeout', () => process.exit(1));
+#     req.end();
+#   " || exit 1
 
 # Start the application
 CMD ["npm", "start"]
