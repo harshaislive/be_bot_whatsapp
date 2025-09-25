@@ -40,6 +40,7 @@ ENV PORT=3002
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
 # Expose port
 EXPOSE 3002
@@ -51,5 +52,5 @@ USER nextjs
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:3002 || exit 1
 
-# Start the application
-CMD ["node", "server.js"]
+# Start the application on port 3002
+CMD ["sh", "-c", "PORT=3002 exec node server.js"]
