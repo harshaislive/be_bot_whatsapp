@@ -50,5 +50,5 @@ USER nextjs
 
 # No Docker health check - Coolify handles health checks
 
-# Start the application on port 3000
-CMD ["sh", "-c", "PORT=3000 exec node server.js"]
+# Start the application
+CMD ["node", "server.js"]
