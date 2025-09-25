@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+
+// Force dynamic rendering to avoid SSG issues with environment variables
+export const dynamic = 'force-dynamic'
 import { MessageTemplate, MessageCategory, supabase } from '@/lib/supabase'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
