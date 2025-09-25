@@ -53,7 +53,7 @@ export function MessagePreview({ template }: MessagePreviewProps) {
                       value={variableValues[variable] || ''}
                       onChange={(e) => handleVariableChange(variable, e.target.value)}
                       placeholder={`Enter ${variable}...`}
-                      size="sm"
+                      className="h-8 text-sm"
                     />
                   </div>
                 ))}

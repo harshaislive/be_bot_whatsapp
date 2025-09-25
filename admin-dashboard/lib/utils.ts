@@ -18,7 +18,7 @@ export function formatDate(dateString: string) {
 
 export function extractVariables(content: string): string[] {
   const variableRegex = /\{\{(\w+)\}\}/g
-  const variables = []
+  const variables: string[] = []
   let match
 
   while ((match = variableRegex.exec(content)) !== null) {
