@@ -1,0 +1,22 @@
+# Coolify configuration for Admin Dashboard Service
+version: "3.8"
+
+services:
+  admin-dashboard:
+    build:
+      context: ./admin-dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3002 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
