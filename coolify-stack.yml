@@ -11,18 +11,14 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
-      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - SUPABASE_URL=$SUPABASE_URL
+      - SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+      - AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY
+      - AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT
+      - AZURE_OPENAI_DEPLOYMENT=$AZURE_OPENAI_DEPLOYMENT
     volumes:
       - wa_sessions:/app/wa_session
       - bot_logs:/app/logs
-    depends_on:
-      - redis
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/api/status || exit 1"]
@@ -30,6 +26,10 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whatsapp-bot.rule=PathPrefix(`/api`) || PathPrefix(`/webhook`)"
+      - "traefik.http.services.whatsapp-bot.loadbalancer.server.port=3000"
 
   # Admin Dashboard Service
   admin-dashboard:
@@ -41,8 +41,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3002
-      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3002 || exit 1"]
@@ -50,26 +50,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-
-  # Redis for session management
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin-dashboard.rule=PathPrefix(`/admin`) || Host(`admin.yourdomain.com`)"
+      - "traefik.http.services.admin-dashboard.loadbalancer.server.port=3002"
 
 volumes:
   wa_sessions:
-    driver: local
   bot_logs:
-    driver: local
-  redis_data:
-    driver: local
