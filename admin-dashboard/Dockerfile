@@ -48,9 +48,9 @@ EXPOSE 3002
 # Switch to nextjs user
 USER nextjs
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:3002 || exit 1
+# Health check disabled - let Coolify handle it
+# HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=5 \
+#   CMD curl -f -s --max-time 10 http://localhost:3002 > /dev/null || exit 1
 
 # Start the application on port 3002
 CMD ["sh", "-c", "PORT=3002 exec node server.js"]
