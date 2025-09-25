@@ -30,6 +30,10 @@ router.get('/health', async (req, res) => {
     await whatsappController.healthCheck(req, res);
 });
 
+router.get('/status', async (req, res) => {
+    await whatsappController.healthCheck(req, res);
+});
+
 // API Info
 router.get('/', (req, res) => {
     res.json({
