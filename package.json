@@ -6,14 +6,20 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/start.js",
+    "start:prod": "NODE_ENV=production node src/app-enterprise.js",
     "dev": "node --watch src/app.js",
     "setup": "node scripts/setup.js",
     "build": "node build.js",
+    "build:docker": "docker build -t whatsapp-bot .",
+    "deploy:coolify": "echo 'Deploy using git push to your Coolify remote'",
     "test": "jest",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "logs": "tail -f logs/app.log",
-    "status": "node scripts/status.js"
+    "status": "node scripts/status.js",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
   },
   "keywords": [
     "whatsapp",

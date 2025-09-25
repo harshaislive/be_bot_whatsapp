@@ -1,0 +1,33 @@
+# Coolify deployment configuration for Enterprise WhatsApp Bot
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # These should be set in Coolify's environment variables
+      - SUPABASE_URL=$SUPABASE_URL
+      - SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+      - AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY
+      - AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT
+      - AZURE_OPENAI_DEPLOYMENT=$AZURE_OPENAI_DEPLOYMENT
+    volumes:
+      - wa_sessions:/app/wa_session
+      - bot_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  wa_sessions:
+  bot_logs:
