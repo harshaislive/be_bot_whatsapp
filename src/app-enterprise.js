@@ -426,8 +426,9 @@ Please choose from our menu:
         }
 
         // 4. DIRECT NUMBERED OPTIONS (main menu)
-        const allowedFlows = ['main_menu', 'welcome', null, undefined];
-        if (['1', '2', '3', '4', '5'].includes(lowerMessage) && (allowedFlows.includes(context.currentFlow))) {
+        // Accept numbers 1-5 from ANY flow EXCEPT those where numbers have different meanings
+        const excludedFlows = ['hospitality', 'intent_confirmation'];
+        if (['1', '2', '3', '4', '5'].includes(lowerMessage) && (!excludedFlows.includes(context.currentFlow))) {
             return { handler: this.handleNumberedOption.bind(this), reason: 'main_menu_option', param: lowerMessage };
         }
 
