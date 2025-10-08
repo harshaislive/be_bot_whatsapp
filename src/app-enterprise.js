@@ -24,6 +24,7 @@ class EnterpriseWhatsAppBot {
     constructor() {
         this.socket = null;
         this.isConnected = false;
+        this.isReady = false; // Track if services are initialized
         this.apiServer = null;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
@@ -47,6 +48,10 @@ class EnterpriseWhatsAppBot {
             // Initialize template service for dynamic messages
             console.log('📄 Initializing template service...');
             await templateService.initialize();
+
+            // Mark services as ready
+            this.isReady = true;
+            console.log('✅ All services initialized and ready');
 
             // Initialize auth state
             const { state, saveCreds } = await useMultiFileAuthState('./wa_session');
@@ -251,6 +256,12 @@ class EnterpriseWhatsAppBot {
             // Skip if message is from bot or has no content
             if (message.key.fromMe || !message.message) return;
 
+            // Wait for services to be ready before processing messages
+            if (!this.isReady) {
+                console.log('⏳ Services still initializing, skipping message temporarily...');
+                return;
+            }
+
             const userPhone = message.key.remoteJid;
             // Extract text content only (ignore media, documents, etc.)
             const messageText = message.message.conversation ||
@@ -378,7 +389,17 @@ class EnterpriseWhatsAppBot {
         } catch (error) {
             console.error('❌ Error in processMessage:', error);
             logger.error('Message processing error:', { error: error.message, userPhone, messageText });
-            await this.sendQuickMessage(userPhone, 'Sorry, something went wrong. Type "menu" to continue.');
+
+            const errorMessage = `I don't have that information readily available right now.
+
+Please choose from our menu:
+1. Collective Visit
+2. Beforest Experiences
+3. Bewild Produce
+4. Beforest Hospitality
+5. Contact Beforest Team`;
+
+            await this.sendQuickMessage(userPhone, errorMessage);
         }
     }
 
@@ -438,142 +459,77 @@ class EnterpriseWhatsAppBot {
             };
         }
 
-        const keywordRoutes = {
-            // Collective Visit keywords
-            collective: { handler: this.handleCollectiveVisit.bind(this), reason: 'collective_keyword' },
-            'group visit': { handler: this.handleCollectiveVisit.bind(this), reason: 'collective_keyword' },
-            'team outing': { handler: this.handleCollectiveVisit.bind(this), reason: 'collective_keyword' },
-
-            // Experiences keywords
-            experience: { handler: this.handleBeforestExperiences.bind(this), reason: 'experience_keyword' },
-            'forest experience': { handler: this.handleBeforestExperiences.bind(this), reason: 'experience_keyword' },
-            nature: { handler: this.handleBeforestExperiences.bind(this), reason: 'experience_keyword' },
-
-            // Bewild keywords
-            bewild: { handler: this.handleBewildProduce.bind(this), reason: 'bewild_keyword' },
-            products: { handler: this.handleBewildProduce.bind(this), reason: 'bewild_keyword' },
-            honey: { handler: this.handleBewildProduce.bind(this), reason: 'bewild_keyword' },
-
-            // Hospitality keywords (general - after specific checks)
-            accommodation: { handler: this.handleBeforestHospitality.bind(this), reason: 'hospitality_keyword' },
-            stay: { handler: this.handleBeforestHospitality.bind(this), reason: 'hospitality_keyword' },
-            booking: { handler: this.handleBeforestHospitality.bind(this), reason: 'hospitality_keyword' },
-
-            // General query keywords
-            query: { handler: this.handleGeneralQuery.bind(this), reason: 'query_keyword' },
-            question: { handler: this.handleGeneralQuery.bind(this), reason: 'query_keyword' },
-            support: { handler: this.handleGeneralQuery.bind(this), reason: 'query_keyword' },
-            help: { handler: this.handleGeneralQuery.bind(this), reason: 'query_keyword' },
-            contact: { handler: this.handleGeneralQuery.bind(this), reason: 'query_keyword' }
-        };
-
-        // Check keyword matches
-        for (const [keyword, route] of Object.entries(keywordRoutes)) {
-            if (lowerMessage.includes(keyword)) {
-                return { handler: route.handler, reason: route.reason, param: null };
-            }
-        }
-
-        // 7. COMMON RESPONSES (acknowledgments)
-        const acknowledgeKeywords = ['thank you', 'thanks', 'ok', 'okay', 'good', 'great', 'perfect', 'yes', 'no'];
-        if (acknowledgeKeywords.some(word => lowerMessage.includes(word))) {
-            return {
-                handler: async (phone) => {
-                    await this.sendQuickMessage(phone, 'Happy to help! Type "menu" for more options.');
-                },
-                reason: 'acknowledgment',
-                param: null
-            };
-        }
-
-        // 8. ESCALATION REQUESTS
+        // 6. ESCALATION REQUESTS
         if (['agent', 'human', 'representative', 'manager', 'escalate'].includes(lowerMessage)) {
             return { handler: this.handleEscalation.bind(this), reason: 'escalation_request', param: 'user_requested' };
         }
 
-        // No static route found - will go to AI fallback
+        // 7. ALL OTHER NATURAL LANGUAGE - Use LLM for intent recognition
+        // No static route found - will use AI to recognize intent
         return null;
     }
 
-    // 🤖 AI FALLBACK HANDLER - Context-aware assistance for natural language
+    // 🤖 AI INTENT RECOGNITION - Uses LLM to understand user intent
     async handleAIFallback(userPhone, messageText, userProfile, context) {
-        console.log('🤖 AI Fallback triggered for natural language input');
+        console.log('🤖 AI Intent Recognition triggered for natural language input');
 
         try {
-            // Provide context to AI about current state
-            const contextPrompt = this.buildContextPrompt(context, messageText);
+            // Use AI to recognize which option (1-5) the user wants
+            const recognizedIntent = await azureOpenAI.recognizeIntent(messageText);
+            console.log(`🎯 AI recognized intent: ${recognizedIntent}`);
 
-            // Get AI response with context
-            const conversationHistory = await sessionManager.getConversationHistory(userPhone, 3);
-            const aiResponse = await azureOpenAI.generateContextualResponse(
-                contextPrompt,
-                conversationHistory,
-                userProfile
-            );
+            // If intent is 0 (unclear/greeting/off-topic), show error fallback
+            if (recognizedIntent === '0') {
+                console.log('❓ Intent unclear - showing error fallback');
 
-            // Check if AI is redirecting to General Query
-            const aiContent = aiResponse.content.toLowerCase();
-            const isRedirectingToQuery = aiContent.includes('general query') ||
-                                        aiContent.includes('option 5') ||
-                                        aiContent.includes('crm@beforest.co');
+                const errorMessage = templateService.getFallbackMessage('error_fallback');
+                await this.sendQuickMessage(userPhone, errorMessage);
+                return;
+            }
 
-            // Send AI response with menu (faster than before)
-            const fullResponse = this.formatAIResponseWithMenu(aiResponse.content);
-            await this.sendMessageWithFallback(userPhone, fullResponse, {
-                fallbackDelay: 2000,
-                typingDuration: 500,
-                context: 'ai_fallback'
-            });
+            // If intent is 1-5, ask user to confirm
+            if (['1', '2', '3', '4', '5'].includes(recognizedIntent)) {
+                console.log(`✅ Valid intent recognized: Option ${recognizedIntent}`);
 
-            // Update conversation history
-            await sessionManager.addToConversationHistory(userPhone, fullResponse, 'assistant');
-            console.log(`✅ AI fallback response sent${isRedirectingToQuery ? ' (redirected to General Query)' : ''}`);
+                // Generate confirmation message
+                const optionNames = {
+                    '1': 'Collective Visit',
+                    '2': 'Beforest Experiences',
+                    '3': 'Bewild Produce',
+                    '4': 'Beforest Hospitality',
+                    '5': 'Contact Beforest Team'
+                };
+
+                const confirmationMessage = `I understand you're interested in ${optionNames[recognizedIntent]}.
+
+Would you like to proceed with this option?
+
+Reply "yes" to continue or choose a number (1-5) from the menu.`;
+
+                await this.sendContinueTypingMessage(userPhone, confirmationMessage, 400);
+
+                // Set session to await confirmation
+                await sessionManager.setContext(userPhone, {
+                    currentFlow: 'intent_confirmation',
+                    recognizedOption: recognizedIntent,
+                    menuLevel: 1
+                });
+
+                return;
+            }
+
+            // If AI returned something unexpected, show error
+            console.log('⚠️ AI returned unexpected intent:', recognizedIntent);
+            const errorMessage = templateService.getFallbackMessage('error_fallback');
+            await this.sendQuickMessage(userPhone, errorMessage);
 
         } catch (error) {
-            console.error('❌ AI fallback error:', error);
+            console.error('❌ AI intent recognition error:', error);
 
-            try {
-                // Try to get error fallback template from database
-                const template = await templateService.getTemplate('error_fallback');
-
-                let errorMessage;
-                if (template) {
-                    errorMessage = template.content;
-                    console.log('📄 Using dynamic error fallback template from database');
-                } else {
-                    errorMessage = templateService.getFallbackMessage('error_fallback');
-                    console.log('⚠️  Using hardcoded error fallback - template not found');
-                }
-
-                await this.sendQuickMessage(userPhone, errorMessage);
-            } catch (fallbackError) {
-                // Ultimate emergency fallback
-                console.error('❌ Error fallback template failed:', fallbackError);
-                await this.sendQuickMessage(userPhone,
-                    'I don\'t have that information right now.\n\n' +
-                    'Type "menu" to see our services or contact us:\n' +
-                    '📧 crm@beforest.co\n' +
-                    '📞 +91 7680070541'
-                );
-            }
+            // Show error fallback
+            const errorMessage = templateService.getFallbackMessage('error_fallback');
+            await this.sendQuickMessage(userPhone, errorMessage);
         }
-    }
-
-    // Build context-aware prompt for AI
-    buildContextPrompt(context, messageText) {
-        let prompt = `User message: "${messageText}"`;
-
-        if (context.currentFlow) {
-            prompt += `\nCurrent flow: ${context.currentFlow}`;
-        }
-
-        if (context.selectedCollective) {
-            prompt += `\nSelected collective: ${context.selectedCollective}`;
-        }
-
-        prompt += '\n\nProvide a helpful response and guide them to the appropriate service option (1-5) if relevant.';
-
-        return prompt;
     }
 
     async handleWelcome(userPhone, userProfile) {
@@ -612,20 +568,16 @@ class EnterpriseWhatsAppBot {
 
         } catch (error) {
             logger.error('Error in handleWelcome:', error);
-            // Emergency fallback
-            const fallbackMessage = `Hello ${userName}! Welcome to Beforest 🌿
+            // Emergency fallback - exact spec from botflow_backup.md
+            const fallbackMessage = `Hello
 
-Your gateway to authentic nature experiences and sustainable living.
-
-*How can I help you today?*
+Hello, this is the Beforest support team for Members. Please let us know what you are looking for from the options below, and we'll guide you further.
 
 1. Collective Visit
 2. Beforest Experiences
 3. Bewild Produce
 4. Beforest Hospitality
-5. General Query
-
-Just type the number or say "menu" anytime!`;
+5. Contact Beforest Team`;
 
             await this.sendContinueTypingMessage(userPhone, fallbackMessage, 400);
             console.log('📤 Sent emergency fallback welcome message');
@@ -658,27 +610,14 @@ Just type the number or say "menu" anytime!`;
 
         } catch (error) {
             logger.error('Error in handleMenu:', error);
-            // Emergency fallback
-            const fallbackMessage = `*Welcome to Beforest*
+            // Emergency fallback - exact spec from botflow_backup.md
+            const fallbackMessage = `Hello, this is the Beforest support team for Members. Please let us know what you are looking for from the options below, and we'll guide you further.
 
-Please select an option:
-
-1. *Collective Visit*
-   Group experiences in restored forests
-
-2. *Beforest Experiences*
-   Forest activities & guided tours
-
-3. *Bewild Produce*
-   Sustainable forest ingredients
-
-4. *Beforest Hospitality*
-   Nature stays & accommodations
-
-5. *General Query*
-   Get support or schedule a call
-
-*Just type the number to continue!*`;
+1. Collective Visit
+2. Beforest Experiences
+3. Bewild Produce
+4. Beforest Hospitality
+5. Contact Beforest Team`;
 
             await this.sendMessage(userPhone, fallbackMessage);
             console.log('📤 Sent emergency fallback menu');
@@ -771,7 +710,50 @@ You can type all this information in one message.`;
     }
 
     async handleCollectiveInfoSubmission(userPhone, messageText) {
-        // Send confirmation message exactly as specified
+        // Validate the submission has meaningful content
+        const trimmedMessage = messageText.trim();
+
+        // Check minimum length (at least 20 characters for basic info)
+        if (trimmedMessage.length < 20) {
+            const errorMessage = `Please provide more details including:
+
+1. Your name
+2. Email address
+3. Purpose of visit
+4. Number of people visiting
+5. Planned date and time of visit
+6. Special requirements (if any)
+
+You can type all this information in one message.`;
+
+            await this.sendContinueTypingMessage(userPhone, errorMessage, 300);
+            console.log('❌ Collective visit info too short - requested more details');
+            return;
+        }
+
+        // Check for at least some basic indicators (email pattern OR @ symbol OR numbers for group size/date)
+        const hasEmail = /@/.test(trimmedMessage);
+        const hasNumbers = /\d+/.test(trimmedMessage);
+        const hasMinWords = trimmedMessage.split(/\s+/).length >= 5; // At least 5 words
+
+        if (!hasMinWords || (!hasEmail && !hasNumbers)) {
+            const errorMessage = `Please include all required details:
+
+1. Your name
+2. Email address
+3. Purpose of visit
+4. Number of people visiting
+5. Planned date and time of visit
+6. Special requirements (if any)
+
+You can type all this information in one message.`;
+
+            await this.sendContinueTypingMessage(userPhone, errorMessage, 300);
+            console.log('❌ Collective visit info incomplete - requested all fields');
+            return;
+        }
+
+        // Valid submission - send confirmation
         const confirmationMessage = `We've received your information.
 
 Our team will review your details and get back to you within 24 hours.`;
@@ -972,37 +954,6 @@ Luxury tents with modern amenities set amidst striking rockscapes in a farming c
         }
     }
 
-    async handleIntentConfirmation(userPhone, originalMessage, recognizedOption, userProfile) {
-        const optionNames = {
-            '1': 'Collective Visit',
-            '2': 'Beforest Experiences',
-            '3': 'Bewild Produce',
-            '4': 'Beforest Hospitality',
-            '5': 'Contact Beforest Team'
-        };
-
-        const confirmationMessage = [
-            `I understand you're interested in *${optionNames[recognizedOption]}*.`,
-            '',
-            'Is that correct?',
-            '',
-            `✓ Reply "yes" to continue`,
-            `✓ Reply "no" to see all options`,
-            `✓ Or type a number (1-5) directly`
-        ].join('\n');
-
-        await this.sendMessage(userPhone, confirmationMessage);
-        console.log(`📤 Sent intent confirmation for option ${recognizedOption}`);
-
-        // Set session context for confirmation handling
-        await sessionManager.setContext(userPhone, {
-            currentFlow: 'intent_confirmation',
-            originalMessage: originalMessage,
-            recognizedOption: recognizedOption,
-            menuLevel: 1
-        });
-    }
-
     async handleConfirmationResponse(userPhone, messageText, userProfile, context) {
         const lowerMessage = messageText.toLowerCase().trim();
 
@@ -1025,14 +976,10 @@ Luxury tents with modern amenities set amidst striking rockscapes in a farming c
             return;
         }
 
-        // If unclear, ask again
-        const clarificationMessage = [
-            'Please confirm:',
-            '',
-            '✓ Type "yes" to proceed',
-            '✓ Type "no" for main menu',
-            '✓ Or type a number (1-5)'
-        ].join('\n');
+        // If unclear, ask again with cleaner message
+        const clarificationMessage = `Please confirm:
+
+Reply "yes" to proceed or choose a number (1-5) from the menu.`;
 
         await this.sendMessage(userPhone, clarificationMessage);
     }
@@ -1057,68 +1004,6 @@ Luxury tents with modern amenities set amidst striking rockscapes in a farming c
 
         analyticsManager.trackEscalation(userPhone, reason);
         await sessionManager.markAsEscalated(userPhone, reason);
-    }
-
-    async handleAIConversation(userPhone, messageText, userProfile, session) {
-        console.log('🤖 Processing with AI...');
-        const startTime = Date.now();
-
-        try {
-            // Get conversation history
-            const conversationHistory = await sessionManager.getConversationHistory(userPhone, 5);
-
-            // Generate AI response with Beforest context
-            const aiResponse = await azureOpenAI.generateContextualResponse(
-                messageText,
-                conversationHistory,
-                userProfile
-            );
-
-            // Combine AI response with menu options
-            const fullResponse = this.formatAIResponseWithMenu(aiResponse.content);
-
-            // Send complete response with fallback for AI processing (only for AI - genuinely slow)
-            await this.sendMessageWithFallback(userPhone, fullResponse, {
-                fallbackDelay: 2500, // Show fallback after 2.5 seconds (reduced)
-                typingDuration: 600,  // Much faster typing
-                context: 'ai'
-            });
-            console.log('📤 Sent AI response with menu options');
-
-            // Update conversation history
-            await sessionManager.addToConversationHistory(userPhone, fullResponse, 'assistant');
-
-            // Track metrics
-            const responseTime = Date.now() - startTime;
-            analyticsManager.trackMessage(userPhone, fullResponse, 'ai');
-
-            logger.aiUsage('contextual_response', aiResponse.usage?.total_tokens || 0, {
-                userPhone,
-                responseTime,
-                responseLength: fullResponse.length
-            });
-
-        } catch (error) {
-            logger.error('AI conversation error:', error);
-            await this.sendMessage(userPhone, 'I apologize for the technical difficulty. Let me connect you with a human agent. Type "agent" for assistance.');
-        }
-    }
-
-    formatAIResponseWithMenu(aiResponse) {
-        // Clean up the AI response and add menu options
-        const cleanResponse = aiResponse.trim();
-
-        const menuOptions = [
-            '',
-            '',
-            '1. Collective Visit',
-            '2. Beforest Experiences',
-            '3. Bewild Produce',
-            '4. Beforest Hospitality',
-            '5. Contact Beforest Team'
-        ];
-
-        return `${cleanResponse}\n\n${menuOptions.join('\n')}`;
     }
 
     async sendTypingMessage(userPhone, message, typingDuration = 1000) {
