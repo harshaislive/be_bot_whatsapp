@@ -201,47 +201,36 @@ class TemplateService {
         const fallbackMessages = {
             welcome_message: `Hello! Welcome to Beforest 🌿
 
-Your gateway to authentic nature experiences and sustainable living.
-
-*How can I help you today?*
+*How can we help you today?*
 
 1. Collective Visit
 2. Beforest Experiences
 3. Bewild Produce
 4. Beforest Hospitality
-5. General Query
+5. Contact Us
 
-Just type the number or say "menu" anytime!`,
+Type a number or "menu" anytime.`,
 
-            main_menu: `*Welcome to Beforest*
+            main_menu: `*How can we help?*
 
-Please select an option:
+1. Collective Visit
+2. Beforest Experiences
+3. Bewild Produce
+4. Beforest Hospitality
+5. Contact Us
 
-1. *Collective Visit*
-   Group experiences in restored forests
+Type a number to continue.`,
 
-2. *Beforest Experiences*
-   Forest activities & guided tours
+            error_fallback: `I don't have that information readily available right now.
 
-3. *Bewild Produce*
-   Sustainable forest ingredients
+Please choose from our menu:
+1. Collective Visit
+2. Beforest Experiences
+3. Bewild Produce
+4. Beforest Hospitality
+5. Contact Us
 
-4. *Beforest Hospitality*
-   Nature stays & accommodations
-
-5. *General Query*
-   Get support or schedule a call
-
-*Just type the number to continue!*`,
-
-            error_fallback: `I didn't quite understand that. Let me show you our options:
-
-Type "menu" to see all services or try:
-• "collective" for group visits
-• "experiences" for nature activities
-• "bewild" for our products
-• "hospitality" for accommodations
-• "query" for questions`
+Or type "menu" to see options.`
         };
 
         return fallbackMessages[templateKey] || fallbackMessages.error_fallback;

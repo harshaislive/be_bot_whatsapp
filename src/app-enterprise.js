@@ -396,10 +396,6 @@ class EnterpriseWhatsAppBot {
         }
 
         // 3. FLOW-BASED ROUTING (context-aware)
-        if (context.currentFlow === 'collective_visit' && ['1', '2', '3', '4', '5'].includes(lowerMessage)) {
-            return { handler: this.handleCollectiveSelection.bind(this), reason: 'collective_selection', param: lowerMessage };
-        }
-
         if (context.currentFlow === 'collective_info_gathering') {
             return { handler: this.handleCollectiveInfoSubmission.bind(this), reason: 'info_submission', param: originalMessage };
         }
@@ -419,6 +415,29 @@ class EnterpriseWhatsAppBot {
         }
 
         // 6. KEYWORD-BASED ROUTING (service-specific)
+
+        // 6a. SPECIFIC ACCOMMODATION ROUTING (before general hospitality)
+        // Handle direct mentions of specific properties with smart responses
+        if (lowerMessage.includes('coorg') || lowerMessage.includes('blyton') || lowerMessage.includes('bungalow')) {
+            return {
+                handler: async (phone) => {
+                    await this.handleSpecificAccommodation(phone, 'blyton');
+                },
+                reason: 'specific_accommodation_blyton',
+                param: 'blyton'
+            };
+        }
+
+        if (lowerMessage.includes('glamping') || lowerMessage.includes('hyderabad tent') || lowerMessage.includes('hyderabad camp')) {
+            return {
+                handler: async (phone) => {
+                    await this.handleSpecificAccommodation(phone, 'glamping');
+                },
+                reason: 'specific_accommodation_glamping',
+                param: 'glamping'
+            };
+        }
+
         const keywordRoutes = {
             // Collective Visit keywords
             collective: { handler: this.handleCollectiveVisit.bind(this), reason: 'collective_keyword' },
@@ -435,11 +454,10 @@ class EnterpriseWhatsAppBot {
             products: { handler: this.handleBewildProduce.bind(this), reason: 'bewild_keyword' },
             honey: { handler: this.handleBewildProduce.bind(this), reason: 'bewild_keyword' },
 
-            // Hospitality keywords
+            // Hospitality keywords (general - after specific checks)
             accommodation: { handler: this.handleBeforestHospitality.bind(this), reason: 'hospitality_keyword' },
             stay: { handler: this.handleBeforestHospitality.bind(this), reason: 'hospitality_keyword' },
             booking: { handler: this.handleBeforestHospitality.bind(this), reason: 'hospitality_keyword' },
-            glamping: { handler: this.handleBeforestHospitality.bind(this), reason: 'hospitality_keyword' },
 
             // General query keywords
             query: { handler: this.handleGeneralQuery.bind(this), reason: 'query_keyword' },
@@ -461,7 +479,7 @@ class EnterpriseWhatsAppBot {
         if (acknowledgeKeywords.some(word => lowerMessage.includes(word))) {
             return {
                 handler: async (phone) => {
-                    await this.sendQuickMessage(phone, 'You\'re welcome! Type "menu" for more options.');
+                    await this.sendQuickMessage(phone, 'Happy to help! Type "menu" for more options.');
                 },
                 reason: 'acknowledgment',
                 param: null
@@ -493,6 +511,12 @@ class EnterpriseWhatsAppBot {
                 userProfile
             );
 
+            // Check if AI is redirecting to General Query
+            const aiContent = aiResponse.content.toLowerCase();
+            const isRedirectingToQuery = aiContent.includes('general query') ||
+                                        aiContent.includes('option 5') ||
+                                        aiContent.includes('crm@beforest.co');
+
             // Send AI response with menu (faster than before)
             const fullResponse = this.formatAIResponseWithMenu(aiResponse.content);
             await this.sendMessageWithFallback(userPhone, fullResponse, {
@@ -503,7 +527,7 @@ class EnterpriseWhatsAppBot {
 
             // Update conversation history
             await sessionManager.addToConversationHistory(userPhone, fullResponse, 'assistant');
-            console.log('✅ AI fallback response sent');
+            console.log(`✅ AI fallback response sent${isRedirectingToQuery ? ' (redirected to General Query)' : ''}`);
 
         } catch (error) {
             console.error('❌ AI fallback error:', error);
@@ -526,13 +550,10 @@ class EnterpriseWhatsAppBot {
                 // Ultimate emergency fallback
                 console.error('❌ Error fallback template failed:', fallbackError);
                 await this.sendQuickMessage(userPhone,
-                    'I didn\'t quite understand that. Let me show you our options:\n\n' +
-                    'Type "menu" to see all services or try:\n' +
-                    '• "collective" for group visits\n' +
-                    '• "experiences" for nature activities\n' +
-                    '• "bewild" for our products\n' +
-                    '• "hospitality" for accommodations\n' +
-                    '• "query" for questions'
+                    'I don\'t have that information right now.\n\n' +
+                    'Type "menu" to see our services or contact us:\n' +
+                    '📧 crm@beforest.co\n' +
+                    '📞 +91 7680070541'
                 );
             }
         }
@@ -684,7 +705,7 @@ Please select an option:
                     await this.handleBeforestHospitality(userPhone);
                     break;
                 case '5':
-                    await this.handleGeneralQuery(userPhone);
+                    await this.handleContactTeam(userPhone);
                     break;
                 default:
                     await this.sendMessage(userPhone, 'Please select a valid option (1-5)');
@@ -694,44 +715,39 @@ Please select an option:
         else if (context.menuLevel === 2) {
             if (context.parentOption === '4') { // Beforest Hospitality sub-menu
                 await this.handleHospitalitySubOption(userPhone, option);
-            } else if (context.parentOption === '5') { // General Query sub-menu
-                await this.handleGeneralQuerySubOption(userPhone, option);
             }
         }
     }
 
     async handleCollectiveVisit(userPhone) {
         try {
-            // Get collective visit options template from database
-            const template = await templateService.getTemplate('collective_visit_options');
+            // Get collective visit template from database
+            const template = await templateService.getTemplate('collective_visit_info');
 
             let message;
             if (template) {
                 message = template.content;
-                console.log('📄 Using dynamic collective visit options template from database');
+                console.log('📄 Using dynamic collective visit template from database');
             } else {
                 // Fallback to hardcoded message
                 message = `*Collective Visit*
 
-Planning a group experience? Perfect!
+Please share these details in one message:
 
-Which collective are you interested in?
-
-1. *Mumbai Collective*
-2. *Hyderabad Collective*
-3. *Bhopal Collective*
-4. *Poomale 2.0*
-5. *Hammiyala Collective*
-
-Please select 1-5 or type "menu" to go back.`;
-                console.log('⚠️  Using fallback collective visit options - template not found');
+• Your name
+• Email
+• Purpose of visit
+• Number of people
+• Preferred date/time
+• Special requirements (if any)`;
+                console.log('⚠️  Using fallback collective visit info - template not found');
             }
 
             await this.sendContinueTypingMessage(userPhone, message, 300);
-            console.log('📤 Sent collective options');
+            console.log('📤 Sent collective visit info request');
 
             await sessionManager.setContext(userPhone, {
-                currentFlow: 'collective_visit',
+                currentFlow: 'collective_info_gathering',
                 menuLevel: 0
             });
 
@@ -740,91 +756,26 @@ Please select 1-5 or type "menu" to go back.`;
             // Emergency fallback
             const fallbackMessage = `*Collective Visit*
 
-Planning a group experience? Perfect!
-
-Which collective are you interested in?
-
-1. *Mumbai Collective*
-2. *Hyderabad Collective*
-3. *Bhopal Collective*
-4. *Poomale 2.0*
-5. *Hammiyala Collective*
-
-Please select 1-5 or type "menu" to go back.`;
+Please share: Name, Email, Purpose, Number of people, Date/time, Special requirements`;
 
             await this.sendContinueTypingMessage(userPhone, fallbackMessage, 300);
-            console.log('📤 Sent emergency fallback collective options');
+            console.log('📤 Sent emergency fallback collective info request');
         }
-    }
-
-    async handleCollectiveSelection(userPhone, selection) {
-        const collectives = {
-            '1': 'Mumbai Collective',
-            '2': 'Hyderabad Collective',
-            '3': 'Bhopal Collective',
-            '4': 'Poomale 2.0',
-            '5': 'Hammiyala Collective'
-        };
-
-        const selectedCollective = collectives[selection];
-
-        if (!selectedCollective) {
-            await this.sendMessage(userPhone, 'Please select a valid option (1-5) or type "menu" to go back.');
-            return;
-        }
-
-        const message = [
-            `*${selectedCollective}*`,
-            '',
-            'Great choice! To help us arrange your group visit, please provide:',
-            '',
-            '*Please send the following information:*',
-            '• Your name',
-            '• Email address',
-            '• Number of people visiting',
-            '• Planned date of visit',
-            '',
-            'You can type all this information in one message.',
-            '',
-            'Type "menu" to go back to main options.'
-        ].join('\n');
-
-        await this.sendContinueTypingMessage(userPhone, message, 300);
-        console.log(`📤 Sent information request for ${selectedCollective}`);
-
-        await sessionManager.setContext(userPhone, {
-            currentFlow: 'collective_info_gathering',
-            selectedCollective: selectedCollective,
-            menuLevel: 0
-        });
     }
 
     async handleCollectiveInfoSubmission(userPhone, messageText) {
-        const session = await sessionManager.getSession(userPhone);
-        const selectedCollective = session.context?.selectedCollective || 'Unknown Collective';
-
         // First, immediate acknowledgment
-        await this.sendMessage(userPhone, '✅ *Information received!*', { typingDuration: 300 });
+        await this.sendMessage(userPhone, 'Thank you! We\'ve received your details.', { typingDuration: 300 });
 
-        // Small pause before detailed confirmation
+        // Small pause before confirmation
         await new Promise(resolve => setTimeout(resolve, 400));
 
         const confirmationMessage = [
-            '*Thank you for your interest!*',
+            'Our team will review your request and get back to you within 24 hours.',
             '',
-            `We've received your information for *${selectedCollective}*.`,
-            '',
-            'Our team will review your details and get back to you within 24 hours.',
-            '',
-            '*What happens next?*',
-            '• Our team reviews your request',
-            '• We\'ll send you a detailed itinerary',
-            '• Payment and booking confirmation',
-            '',
-            'For immediate assistance, contact us at:',
-            '*Email:* crm@beforest.co',
-            '',
-            'Type "menu" for more options!'
+            'Need immediate assistance?',
+            '📧 crm@beforest.co',
+            '📞 +91 7680070541 (Mon-Fri, 10am-6pm)'
         ].join('\n');
 
         await this.sendContinueTypingMessage(userPhone, confirmationMessage, 400);
@@ -833,13 +784,11 @@ Please select 1-5 or type "menu" to go back.`;
         // Reset to main menu
         await sessionManager.setContext(userPhone, {
             currentFlow: 'main_menu',
-            menuLevel: 1,
-            selectedCollective: null
+            menuLevel: 1
         });
 
         // Log the submission for follow-up
         console.log(`📋 Collective visit info submitted:`, {
-            collective: selectedCollective,
             userPhone: userPhone.split('@')[0],
             timestamp: new Date().toISOString(),
             info: messageText.substring(0, 200) + '...'
@@ -859,19 +808,10 @@ Please select 1-5 or type "menu" to go back.`;
                 // Fallback to hardcoded message
                 message = `*Beforest Experiences*
 
-Discover our unique nature experiences!
+Immersive nature journeys that leave you with joy and a sense of belonging.
 
-*Visit our experiences page:*
-https://experiences.beforest.co
-
-*What awaits you:*
-• Forest bathing sessions
-• Wildlife photography workshops
-• Sustainable living experiences
-• Guided nature walks
-• Farm-to-table dining
-
-Type "menu" for more options!`;
+Explore upcoming experiences:
+https://experiences.beforest.co/`;
                 console.log('⚠️  Using fallback experiences message - template not found');
             }
 
@@ -888,12 +828,7 @@ Type "menu" for more options!`;
             // Emergency fallback
             const fallbackMessage = `*Beforest Experiences*
 
-Discover our unique nature experiences!
-
-*Visit our experiences page:*
-https://experiences.beforest.co
-
-Type "menu" for more options!`;
+Explore: https://experiences.beforest.co/`;
 
             await this.sendContinueTypingMessage(userPhone, fallbackMessage, 300);
             console.log('📤 Sent emergency fallback experiences message');
@@ -913,23 +848,10 @@ Type "menu" for more options!`;
                 // Fallback to hardcoded message
                 message = `*Bewild Produce*
 
-*Ingredients that did not give up* 🌿
+Good food from good practices — where forests and agriculture flourish together.
 
-Born from restored forest landscapes, each Bewild ingredient is a testament to nature's resilience.
-
-*Our Story:*
-Found in the wild coffee forests of Coorg, our ingredients grow free in their natural habitats—just like nature intended.
-
-*What makes us special:*
-• Forest-found, not farmed ingredients
-• Native & heirloom varieties
-• Chemical-free & wild-crafted
-• Supporting 100+ acres of restoration
-
-*Visit Bewild:*
-https://bewild.life
-
-Type "menu" to explore more options!`;
+Discover more:
+https://bewild.life/`;
                 console.log('⚠️  Using fallback bewild message - template not found');
             }
 
@@ -946,12 +868,7 @@ Type "menu" to explore more options!`;
             // Emergency fallback
             const fallbackMessage = `*Bewild Produce*
 
-*Ingredients that did not give up* 🌿
-
-*Visit Bewild:*
-https://bewild.life
-
-Type "menu" to explore more options!`;
+Discover: https://bewild.life/`;
 
             await this.sendContinueTypingMessage(userPhone, fallbackMessage, 300);
             console.log('📤 Sent emergency fallback bewild message');
@@ -1009,172 +926,97 @@ Please select 1 or 2 to continue.`;
         }
     }
 
-    async handleGeneralQuery(userPhone) {
+    async handleContactTeam(userPhone) {
         try {
-            // Get general query template from database
-            const template = await templateService.getTemplate('general_query_message');
+            // Get contact team template from database
+            const template = await templateService.getTemplate('contact_team_message');
 
             let message;
             if (template) {
                 message = template.content;
-                console.log('📄 Using dynamic general query template from database');
+                console.log('📄 Using dynamic contact team template from database');
             } else {
                 // Fallback to hardcoded message
-                message = `*General Query*
+                message = `*Contact Us*
 
-Have a question? We're here to help!
+📧 crm@beforest.co
+📞 +91 7680070541
 
-📧 *Send your query to:*
-crm@beforest.co
-
-📞 *Or call us:*
-Monday to Friday, 10 AM - 6 PM
-
-*When sending your query, please include:*
-• Your question or requirement
-• Good time to speak (if you prefer a call)
-• Your preferred contact method
-
-Simply tap the email above to send your query directly!
-
-Type "menu" to explore more options.`;
-                console.log('⚠️  Using fallback general query message - template not found');
+*Available:* Monday to Friday, 10am-6pm`;
+                console.log('⚠️  Using fallback contact team message - template not found');
             }
 
             await this.sendContinueTypingMessage(userPhone, message, 300);
-            console.log('📤 Sent general query CTA');
+            console.log('📤 Sent contact team info');
 
             await sessionManager.setContext(userPhone, {
-                currentFlow: 'general_query',
+                currentFlow: 'contact_team',
                 menuLevel: 0
             });
 
         } catch (error) {
-            logger.error('Error in handleGeneralQuery:', error);
+            logger.error('Error in handleContactTeam:', error);
             // Emergency fallback
-            const fallbackMessage = `*General Query*
+            const fallbackMessage = `*Contact Us*
 
-Have a question? We're here to help!
-
-📧 *Send your query to:*
-crm@beforest.co
-
-Type "menu" to explore more options.`;
+📧 crm@beforest.co
+📞 +91 7680070541 (Mon-Fri, 10am-6pm)`;
 
             await this.sendContinueTypingMessage(userPhone, fallbackMessage, 300);
-            console.log('📤 Sent emergency fallback general query message');
+            console.log('📤 Sent emergency fallback contact team message');
         }
+    }
+
+    async handleSpecificAccommodation(userPhone, accommodationType) {
+        if (accommodationType === 'blyton') {
+            const message = [
+                '*Blyton Bungalow, Poomaale Collective, Coorg*',
+                '',
+                'Eco-friendly luxury meets coffee plantations.',
+                '',
+                'Learn more and book:',
+                'https://hospitality.beforest.co/',
+                '',
+                'For pricing & availability:',
+                '📧 crm@beforest.co',
+                '📞 +91 7680070541'
+            ].join('\n');
+
+            await this.sendContinueTypingMessage(userPhone, message, 300);
+            console.log('📤 Sent Blyton Bungalow direct info');
+
+        } else if (accommodationType === 'glamping') {
+            const message = [
+                '*Glamping, Hyderabad Collective*',
+                '',
+                'Luxury tents amidst striking rockscapes.',
+                '',
+                'Learn more and book:',
+                'https://docs.google.com/forms/d/e/1FAIpQLSfnJDGgi6eSbx-pVdPrZQvgkqlxFuPja4UGaYLLyRBmYzx_zg/viewform',
+                '',
+                'For pricing & availability:',
+                '📧 crm@beforest.co',
+                '📞 +91 7680070541'
+            ].join('\n');
+
+            await this.sendContinueTypingMessage(userPhone, message, 300);
+            console.log('📤 Sent Glamping direct info');
+        }
+
+        await sessionManager.setContext(userPhone, {
+            currentFlow: 'hospitality_direct',
+            menuLevel: 0
+        });
     }
 
     async handleHospitalitySubOption(userPhone, option) {
         if (option === '1') {
-            const message = [
-                '*Blyton Bungalow, Coorg*',
-                '',
-                'Experience heritage hospitality in coffee country!',
-                '',
-                '🏡 *Visit our hospitality website:*',
-                'https://hospitality.beforest.co',
-                '',
-                '✨ *What awaits you:*',
-                '• Heritage bungalow accommodation',
-                '• Coffee plantation tours',
-                '• Traditional Coorgi meals',
-                '• Nature walks',
-                '',
-                'Visit the link above for bookings and availability!',
-                '',
-                'Type "menu" to explore more options!'
-            ].join('\n');
-
-            await this.sendContinueTypingMessage(userPhone, message, 300);
-            console.log('📤 Sent Blyton Bungalow info');
-
+            await this.handleSpecificAccommodation(userPhone, 'blyton');
         } else if (option === '2') {
-            const message = [
-                '*Glamping, Hyderabad*',
-                '',
-                'Luxury camping experience near the city!',
-                '',
-                '📋 *Book your glamping experience:*',
-                'https://docs.google.com/forms/d/e/1FAIpQLSfnJDGgi6eSbx-pVdPrZQvgkqlxFuPja4UGaYLLyRBmYzx_zg/viewform',
-                '',
-                '✨ *What\'s included:*',
-                '• Luxury tent accommodation',
-                '• Modern amenities',
-                '• Outdoor activities',
-                '• Farm fresh meals',
-                '',
-                'Fill the form above to secure your glamping spot!',
-                '',
-                'Type "menu" for more options!'
-            ].join('\n');
-
-            await this.sendContinueTypingMessage(userPhone, message, 300);
-            console.log('📤 Sent Glamping form');
-
+            await this.handleSpecificAccommodation(userPhone, 'glamping');
         } else {
             await this.sendMessage(userPhone, 'Please select 1 for Blyton Bungalow or 2 for Glamping.');
         }
-
-        await sessionManager.setContext(userPhone, {
-            currentFlow: 'hospitality_booked',
-            menuLevel: 0
-        });
-    }
-
-    async handleGeneralQuerySubOption(userPhone, option) {
-        if (option === '1') {
-            const message = [
-                '*Schedule a Call*',
-                '',
-                'Let\'s connect personally!',
-                '',
-                '*Book your call slot:*',
-                'https://calendly.com/beforest-team',
-                '',
-                '*Available slots:*',
-                '• Monday to Friday: 9 AM - 6 PM',
-                '• Saturday: 10 AM - 4 PM',
-                '• Duration: 15-30 minutes',
-                '',
-                'We\'ll discuss your requirements and provide personalized recommendations.',
-                '',
-                'Type "menu" to return to main options!'
-            ].join('\n');
-
-            await this.sendMessage(userPhone, message);
-            console.log('📤 Sent call scheduling link');
-
-        } else if (option === '2') {
-            const message = [
-                '*Drop Your Query*',
-                '',
-                'We\'re here to help!',
-                '',
-                '*Send us your question:*',
-                'https://forms.gle/beforest-query-form',
-                '',
-                '*Or email us directly:*',
-                'hello@beforest.co',
-                '',
-                '*Response time:*',
-                'We typically respond within 4-6 hours during business days.',
-                '',
-                'Type "menu" to explore more options!'
-            ].join('\n');
-
-            await this.sendMessage(userPhone, message);
-            console.log('📤 Sent query form');
-
-        } else {
-            await this.sendMessage(userPhone, 'Please select 1 to Schedule a Call or 2 to Drop Your Query.');
-        }
-
-        await sessionManager.setContext(userPhone, {
-            currentFlow: 'query_submitted',
-            menuLevel: 0
-        });
     }
 
     async handleIntentConfirmation(userPhone, originalMessage, recognizedOption, userProfile) {
@@ -1183,7 +1025,7 @@ Type "menu" to explore more options.`;
             '2': 'Beforest Experiences',
             '3': 'Bewild Produce',
             '4': 'Beforest Hospitality',
-            '5': 'General Query'
+            '5': 'Contact Beforest Team'
         };
 
         const confirmationMessage = [
@@ -1315,15 +1157,13 @@ Type "menu" to explore more options.`;
 
         const menuOptions = [
             '',
-            '*How can I help you further?*',
+            '*What else can we help with?*',
             '',
             '1. Collective Visit',
             '2. Beforest Experiences',
             '3. Bewild Produce',
             '4. Beforest Hospitality',
-            '5. General Query',
-            '',
-            'Type a number or describe what you need!'
+            '5. Contact Us'
         ];
 
         return `${cleanResponse}\n\n${menuOptions.join('\n')}`;
