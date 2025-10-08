@@ -47,32 +47,44 @@ A sophisticated WhatsApp bot built with BuilderBot framework, featuring AI integ
 ## 📁 Project Structure
 
 ```
-├── src/                        # Bot source code
-│   ├── app-enterprise.js       # Main bot application
-│   ├── config/                 # Configuration management
-│   ├── ai/                     # Azure OpenAI integration
-│   ├── services/               # Business logic services
-│   │   ├── templateService.js  # Dynamic template management
-│   │   └── supabaseService.js  # Database operations
-│   ├── utils/                  # Utility functions
-│   └── middleware/             # Rate limiting, analytics
-├── admin-dashboard/            # Next.js admin interface
-│   ├── app/                    # App Router pages
-│   ├── components/             # React components
-│   └── lib/                    # Utilities and config
-├── database/                   # SQL schemas and migrations
-└── docs/                       # Documentation
+├── src/
+│   ├── app-enterprise.js       # Main bot application (ENTRY POINT)
+│   ├── ai/
+│   │   └── openai.js          # Azure OpenAI integration
+│   ├── api/
+│   │   ├── routes.js          # Express API routes
+│   │   └── whatsappControl.js # WhatsApp control endpoints
+│   ├── config/
+│   │   └── config.js          # Environment configuration
+│   ├── middleware/
+│   │   ├── analytics.js       # Analytics tracking
+│   │   └── rateLimiter.js     # Rate limiting
+│   ├── services/
+│   │   ├── redisService.js    # Redis connection
+│   │   ├── supabaseService.js # Supabase database
+│   │   └── templateService.js # Message templates
+│   └── utils/
+│       ├── errorHandler.js    # Error handling
+│       ├── logger.js          # Logging utility
+│       ├── redisSessionManager.js
+│       ├── sessionManager.js  # Session management
+│       └── userProfileManager.js
+├── scripts/
+│   └── start.js               # Startup validation script
+├── admin-dashboard/           # Next.js admin interface
+├── logs/                      # Application logs
+├── wa_session/                # WhatsApp session data
+└── package.json
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+
-- MongoDB database
-- Redis server
-- Supabase account
+- Redis server (for session management)
+- Supabase account (for database)
 - Azure OpenAI API access
-- WhatsApp Business account
+- WhatsApp account (personal or business)
 
 ### Installation
 
@@ -89,24 +101,49 @@ A sophisticated WhatsApp bot built with BuilderBot framework, featuring AI integ
    ```
 
 3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
+
+   Create a `.env` file in the root directory:
+   ```env
+   # Azure OpenAI
+   AZURE_OPENAI_API_KEY=your_api_key
+   AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+   AZURE_OPENAI_DEPLOYMENT=your_deployment_name
+   AZURE_OPENAI_API_VERSION=2024-02-15-preview
+
+   # Supabase
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_ANON_KEY=your_supabase_anon_key
+
+   # Redis (optional)
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+
+   # Server
+   PORT=3000
+   NODE_ENV=development
    ```
 
 4. **Set up database**
-   - Run SQL files in `database/` folder in Supabase
-   - Configure connection in `.env`
+   - Run `bot_tables_setup.sql` in your Supabase SQL editor
+   - Run `templates_setup.sql` for message templates
 
 5. **Start the bot**
    ```bash
-   npm start
+   npm start        # Production mode with validation
+   # OR
+   npm run dev      # Development mode with auto-reload
    ```
 
-6. **Start admin dashboard**
+6. **Scan QR code**
+   - QR code will appear in terminal
+   - Or open `logs/whatsapp-qr.png` if terminal QR is unclear
+   - Scan with WhatsApp → Settings → Linked Devices
+
+7. **Start admin dashboard** (optional)
    ```bash
    cd admin-dashboard
    npm run dev
+   # Visit http://localhost:3002
    ```
 
 ## ⚙️ Configuration
