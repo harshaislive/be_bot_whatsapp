@@ -730,16 +730,16 @@ Please select an option:
                 console.log('📄 Using dynamic collective visit template from database');
             } else {
                 // Fallback to hardcoded message
-                message = `*Collective Visit*
+                message = `To help us arrange your group visit, please provide the following details:
 
-Please share these details in one message:
+1. Your name
+2. Email address
+3. Purpose of visit
+4. Number of people visiting
+5. Planned date and time of visit
+6. Special requirements (if any)
 
-• Your name
-• Email
-• Purpose of visit
-• Number of people
-• Preferred date/time
-• Special requirements (if any)`;
+You can type all this information in one message.`;
                 console.log('⚠️  Using fallback collective visit info - template not found');
             }
 
@@ -754,9 +754,16 @@ Please share these details in one message:
         } catch (error) {
             logger.error('Error in handleCollectiveVisit:', error);
             // Emergency fallback
-            const fallbackMessage = `*Collective Visit*
+            const fallbackMessage = `To help us arrange your group visit, please provide the following details:
 
-Please share: Name, Email, Purpose, Number of people, Date/time, Special requirements`;
+1. Your name
+2. Email address
+3. Purpose of visit
+4. Number of people visiting
+5. Planned date and time of visit
+6. Special requirements (if any)
+
+You can type all this information in one message.`;
 
             await this.sendContinueTypingMessage(userPhone, fallbackMessage, 300);
             console.log('📤 Sent emergency fallback collective info request');
@@ -764,19 +771,10 @@ Please share: Name, Email, Purpose, Number of people, Date/time, Special require
     }
 
     async handleCollectiveInfoSubmission(userPhone, messageText) {
-        // First, immediate acknowledgment
-        await this.sendMessage(userPhone, 'Thank you! We\'ve received your details.', { typingDuration: 300 });
+        // Send confirmation message exactly as specified
+        const confirmationMessage = `We've received your information.
 
-        // Small pause before confirmation
-        await new Promise(resolve => setTimeout(resolve, 400));
-
-        const confirmationMessage = [
-            'Our team will review your request and get back to you within 24 hours.',
-            '',
-            'Need immediate assistance?',
-            '📧 crm@beforest.co',
-            '📞 +91 7680070541 (Mon-Fri, 10am-6pm)'
-        ].join('\n');
+Our team will review your details and get back to you within 24 hours.`;
 
         await this.sendContinueTypingMessage(userPhone, confirmationMessage, 400);
         console.log('📤 Sent collective visit confirmation');
@@ -806,12 +804,7 @@ Please share: Name, Email, Purpose, Number of people, Date/time, Special require
                 console.log('📄 Using dynamic experiences template from database');
             } else {
                 // Fallback to hardcoded message
-                message = `*Beforest Experiences*
-
-Immersive nature journeys that leave you with joy and a sense of belonging.
-
-Explore upcoming experiences:
-https://experiences.beforest.co/`;
+                message = `Beforest Experiences offers immersive journeys into nature that leave you with joy and a true sense of belonging. To know more about upcoming experiences: https://experiences.beforest.co/`;
                 console.log('⚠️  Using fallback experiences message - template not found');
             }
 
@@ -826,9 +819,7 @@ https://experiences.beforest.co/`;
         } catch (error) {
             logger.error('Error in handleBeforestExperiences:', error);
             // Emergency fallback
-            const fallbackMessage = `*Beforest Experiences*
-
-Explore: https://experiences.beforest.co/`;
+            const fallbackMessage = `Beforest Experiences offers immersive journeys into nature that leave you with joy and a true sense of belonging. To know more about upcoming experiences: https://experiences.beforest.co/`;
 
             await this.sendContinueTypingMessage(userPhone, fallbackMessage, 300);
             console.log('📤 Sent emergency fallback experiences message');
@@ -846,12 +837,9 @@ Explore: https://experiences.beforest.co/`;
                 console.log('📄 Using dynamic bewild template from database');
             } else {
                 // Fallback to hardcoded message
-                message = `*Bewild Produce*
+                message = `Bewild, rooted in restored landscapes, proves that good food comes from good practices, where forests and agriculture flourish together.
 
-Good food from good practices — where forests and agriculture flourish together.
-
-Discover more:
-https://bewild.life/`;
+Discover Bewild Produce at https://bewild.life/`;
                 console.log('⚠️  Using fallback bewild message - template not found');
             }
 
@@ -866,9 +854,9 @@ https://bewild.life/`;
         } catch (error) {
             logger.error('Error in handleBewildProduce:', error);
             // Emergency fallback
-            const fallbackMessage = `*Bewild Produce*
+            const fallbackMessage = `Bewild, rooted in restored landscapes, proves that good food comes from good practices, where forests and agriculture flourish together.
 
-Discover: https://bewild.life/`;
+Discover Bewild Produce at https://bewild.life/`;
 
             await this.sendContinueTypingMessage(userPhone, fallbackMessage, 300);
             console.log('📤 Sent emergency fallback bewild message');
@@ -886,17 +874,10 @@ Discover: https://bewild.life/`;
                 console.log('📄 Using dynamic hospitality template from database');
             } else {
                 // Fallback to hardcoded message
-                message = `*Beforest Hospitality*
+                message = `Choose your preferred stay:
 
-Choose your perfect stay:
-
-1. *Blyton Bungalow, Poomaale Collective, Coorg*
-   Heritage bungalow in coffee plantations
-
-2. *Glamping, Hyderabad Collective*
-   Luxury tents with modern amenities
-
-Please select 1 or 2 to continue.`;
+1. Blyton Bungalow, Poomaale Collective, Coorg
+2. Glamping, Hyderabad Collective`;
                 console.log('⚠️  Using fallback hospitality message - template not found');
             }
 
@@ -912,14 +893,10 @@ Please select 1 or 2 to continue.`;
         } catch (error) {
             logger.error('Error in handleBeforestHospitality:', error);
             // Emergency fallback
-            const fallbackMessage = `*Beforest Hospitality*
+            const fallbackMessage = `Choose your preferred stay:
 
-Choose your perfect stay:
-
-1. *Blyton Bungalow, Poomaale Collective, Coorg*
-2. *Glamping, Hyderabad Collective*
-
-Please select 1 or 2 to continue.`;
+1. Blyton Bungalow, Poomaale Collective, Coorg
+2. Glamping, Hyderabad Collective`;
 
             await this.sendMessage(userPhone, fallbackMessage);
             console.log('📤 Sent emergency fallback hospitality message');
@@ -937,12 +914,7 @@ Please select 1 or 2 to continue.`;
                 console.log('📄 Using dynamic contact team template from database');
             } else {
                 // Fallback to hardcoded message
-                message = `*Contact Us*
-
-📧 crm@beforest.co
-📞 +91 7680070541
-
-*Available:* Monday to Friday, 10am-6pm`;
+                message = `For general queries, please write to crm@beforest.co to help us keep a clear record and provide detailed resolutions. You can also call us on +91 7680070541, Monday to Friday, 10 am to 6 pm.`;
                 console.log('⚠️  Using fallback contact team message - template not found');
             }
 
@@ -957,10 +929,7 @@ Please select 1 or 2 to continue.`;
         } catch (error) {
             logger.error('Error in handleContactTeam:', error);
             // Emergency fallback
-            const fallbackMessage = `*Contact Us*
-
-📧 crm@beforest.co
-📞 +91 7680070541 (Mon-Fri, 10am-6pm)`;
+            const fallbackMessage = `For general queries, please write to crm@beforest.co to help us keep a clear record and provide detailed resolutions. You can also call us on +91 7680070541, Monday to Friday, 10 am to 6 pm.`;
 
             await this.sendContinueTypingMessage(userPhone, fallbackMessage, 300);
             console.log('📤 Sent emergency fallback contact team message');
@@ -969,35 +938,19 @@ Please select 1 or 2 to continue.`;
 
     async handleSpecificAccommodation(userPhone, accommodationType) {
         if (accommodationType === 'blyton') {
-            const message = [
-                '*Blyton Bungalow, Poomaale Collective, Coorg*',
-                '',
-                'Eco-friendly luxury meets coffee plantations.',
-                '',
-                'Learn more and book:',
-                'https://hospitality.beforest.co/',
-                '',
-                'For pricing & availability:',
-                '📧 crm@beforest.co',
-                '📞 +91 7680070541'
-            ].join('\n');
+            const message = `Blyton Bungalow, Poomaale Collective, Coorg
+
+Harmony of nature where eco-friendly luxury meets the rich aroma of coffee plantations.
+
+Refer to this link to learn more and book your stay. https://hospitality.beforest.co/`;
 
             await this.sendContinueTypingMessage(userPhone, message, 300);
             console.log('📤 Sent Blyton Bungalow direct info');
 
         } else if (accommodationType === 'glamping') {
-            const message = [
-                '*Glamping, Hyderabad Collective*',
-                '',
-                'Luxury tents amidst striking rockscapes.',
-                '',
-                'Learn more and book:',
-                'https://docs.google.com/forms/d/e/1FAIpQLSfnJDGgi6eSbx-pVdPrZQvgkqlxFuPja4UGaYLLyRBmYzx_zg/viewform',
-                '',
-                'For pricing & availability:',
-                '📧 crm@beforest.co',
-                '📞 +91 7680070541'
-            ].join('\n');
+            const message = `Glamping, Hyderabad Collective
+
+Luxury tents with modern amenities set amidst striking rockscapes in a farming collective. Refer to this link to learn more and book your stay. https://docs.google.com/forms/d/e/1FAIpQLSfnJDGgi6eSbx-pVdPrZQvgkqlxFuPja4UGaYLLyRBmYzx_zg/viewform`;
 
             await this.sendContinueTypingMessage(userPhone, message, 300);
             console.log('📤 Sent Glamping direct info');
@@ -1157,13 +1110,12 @@ Please select 1 or 2 to continue.`;
 
         const menuOptions = [
             '',
-            '*What else can we help with?*',
             '',
             '1. Collective Visit',
             '2. Beforest Experiences',
             '3. Bewild Produce',
             '4. Beforest Hospitality',
-            '5. Contact Us'
+            '5. Contact Beforest Team'
         ];
 
         return `${cleanResponse}\n\n${menuOptions.join('\n')}`;

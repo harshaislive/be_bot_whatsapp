@@ -199,27 +199,23 @@ class TemplateService {
     // Get fallback message when template is not found
     getFallbackMessage(templateKey) {
         const fallbackMessages = {
-            welcome_message: `Hello! Welcome to Beforest 🌿
+            welcome_message: `Hello
 
-*How can we help you today?*
-
-1. Collective Visit
-2. Beforest Experiences
-3. Bewild Produce
-4. Beforest Hospitality
-5. Contact Us
-
-Type a number or "menu" anytime.`,
-
-            main_menu: `*How can we help?*
+Hello, this is the Beforest support team for Members. Please let us know what you are looking for from the options below, and we'll guide you further.
 
 1. Collective Visit
 2. Beforest Experiences
 3. Bewild Produce
 4. Beforest Hospitality
-5. Contact Us
+5. Contact Beforest Team`,
 
-Type a number to continue.`,
+            main_menu: `Hello, this is the Beforest support team for Members. Please let us know what you are looking for from the options below, and we'll guide you further.
+
+1. Collective Visit
+2. Beforest Experiences
+3. Bewild Produce
+4. Beforest Hospitality
+5. Contact Beforest Team`,
 
             error_fallback: `I don't have that information readily available right now.
 
@@ -228,9 +224,7 @@ Please choose from our menu:
 2. Beforest Experiences
 3. Bewild Produce
 4. Beforest Hospitality
-5. Contact Us
-
-Or type "menu" to see options.`
+5. Contact Beforest Team`
         };
 
         return fallbackMessages[templateKey] || fallbackMessages.error_fallback;
