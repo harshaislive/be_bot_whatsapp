@@ -4,6 +4,20 @@ import { logger } from '../utils/logger.js';
 
 class AzureOpenAIService {
     constructor() {
+        // Log Azure configuration on startup
+        console.log('🔧 Azure OpenAI Configuration:');
+        console.log(`   Endpoint: ${config.azure.endpoint ? config.azure.endpoint : '❌ MISSING'}`);
+        console.log(`   Deployment: ${config.azure.deployment ? config.azure.deployment : '❌ MISSING'}`);
+        console.log(`   API Version: ${config.azure.apiVersion ? config.azure.apiVersion : '❌ MISSING'}`);
+        console.log(`   API Key: ${config.azure.apiKey ? `${config.azure.apiKey.substring(0, 10)}...` : '❌ MISSING'}`);
+
+        if (!config.azure.apiKey || !config.azure.endpoint || !config.azure.deployment) {
+            console.error('❌ Azure OpenAI NOT CONFIGURED - AI features will use keyword fallback');
+            logger.warn('Azure OpenAI credentials missing - AI features disabled');
+            this.isConfigured = false;
+            return;
+        }
+
         this.client = new AzureOpenAI({
             apiKey: config.azure.apiKey,
             apiVersion: config.azure.apiVersion,
@@ -11,6 +25,8 @@ class AzureOpenAIService {
         });
         this.deployment = config.azure.deployment;
         this.defaultModel = config.azure.model || this.deployment;
+        this.isConfigured = true;
+        console.log('✅ Azure OpenAI configured successfully\n');
     }
 
     async generateResponse(messages, options = {}) {

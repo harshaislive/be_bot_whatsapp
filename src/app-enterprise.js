@@ -426,7 +426,8 @@ Please choose from our menu:
         }
 
         // 4. DIRECT NUMBERED OPTIONS (main menu)
-        if (['1', '2', '3', '4', '5'].includes(lowerMessage) && (!context.currentFlow || context.currentFlow === 'main_menu')) {
+        const allowedFlows = ['main_menu', 'welcome', null, undefined];
+        if (['1', '2', '3', '4', '5'].includes(lowerMessage) && (allowedFlows.includes(context.currentFlow))) {
             return { handler: this.handleNumberedOption.bind(this), reason: 'main_menu_option', param: lowerMessage };
         }
 
