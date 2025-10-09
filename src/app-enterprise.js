@@ -954,6 +954,19 @@ Luxury tents with modern amenities set amidst striking rockscapes in a farming c
         }
     }
 
+    formatAIResponseWithMenu(aiResponse) {
+        // Add menu reminder at the end of AI responses if not already present
+        const hasMenuMention = aiResponse.toLowerCase().includes('menu') ||
+                              aiResponse.toLowerCase().includes('option') ||
+                              aiResponse.toLowerCase().includes('type a number');
+
+        if (hasMenuMention) {
+            return aiResponse;
+        }
+
+        return `${aiResponse}\n\nType "menu" anytime to see options.`;
+    }
+
     async handleEscalation(userPhone, userProfile, reason) {
         const userName = userProfile?.personalInfo?.name || 'Customer';
 
