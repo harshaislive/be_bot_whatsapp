@@ -1,6 +1,11 @@
-# 🤖 Beforest WhatsApp Bot - Enterprise Edition
+# 🤖 Beforest WhatsApp Bot
 
-A sophisticated WhatsApp bot built with BuilderBot framework, featuring AI integration, dynamic message templates, and a professional admin dashboard for content management.
+> **🎯 CURRENTLY ACTIVE: Simplified LLM-First Bot** (`app-simple-llm.js`)
+> 100% AI-driven conversations with comprehensive knowledge base. See [SIMPLE_LLM_APPROACH.md](SIMPLE_LLM_APPROACH.md) for details.
+
+A sophisticated WhatsApp bot with two deployment options:
+- **Simple LLM-First** (Active): 200 lines, AI handles everything intelligently
+- **Complex Flow-Based**: 1000+ lines, pattern matching with AI fallback
 
 ## 🌟 Features
 

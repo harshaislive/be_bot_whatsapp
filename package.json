@@ -2,14 +2,14 @@
   "name": "enterprise-whatsapp-bot",
   "version": "1.0.0",
   "description": "Enterprise-grade WhatsApp bot using BuilderBot and Azure OpenAI",
-  "main": "src/app-enterprise.js",
+  "main": "src/app-simple-llm.js",
   "type": "module",
   "scripts": {
     "start": "node scripts/start.js",
-    "start:prod": "NODE_ENV=production node src/app-enterprise.js",
-    "dev": "node --watch src/app-enterprise.js",
-    "simple": "node src/app-simple-llm.js",
-    "simple:dev": "node --watch src/app-simple-llm.js",
+    "start:prod": "NODE_ENV=production node src/app-simple-llm.js",
+    "dev": "node --watch src/app-simple-llm.js",
+    "complex": "node src/app-enterprise.js",
+    "complex:dev": "node --watch src/app-enterprise.js",
     "logs": "tail -f logs/app.log"
   },
   "keywords": [

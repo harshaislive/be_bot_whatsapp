@@ -139,11 +139,11 @@ function displayStartupInfo() {
 
 // Start the bot
 function startBot() {
-    console.log('🚀 Starting Enterprise WhatsApp Bot...\n');
+    console.log('🚀 Starting Simplified LLM WhatsApp Bot...\n');
 
     try {
         // Use spawn instead of execSync for better output handling
-        const child = spawn('node', ['src/app-enterprise.js'], {
+        const child = spawn('node', ['src/app-simple-llm.js'], {
             cwd: rootDir,
             stdio: 'inherit'
         });
