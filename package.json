@@ -8,6 +8,8 @@
     "start": "node scripts/start.js",
     "start:prod": "NODE_ENV=production node src/app-enterprise.js",
     "dev": "node --watch src/app-enterprise.js",
+    "simple": "node src/app-simple-llm.js",
+    "simple:dev": "node --watch src/app-simple-llm.js",
     "logs": "tail -f logs/app.log"
   },
   "keywords": [
