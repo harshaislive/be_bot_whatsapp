@@ -1,35 +1,57 @@
-# 🚀 Deployment Guide - Enterprise WhatsApp Bot
+# 🚀 Deployment Guide
 
-This guide covers deploying the WhatsApp bot to various platforms including Coolify, Docker, and cloud providers.
+> **🎯 ACTIVE BOT: Simplified LLM-First** (`src/app-simple-llm.js`)
+>
+> This guide covers deploying to Coolify, Docker, and cloud platforms.
+
+## 🤖 Which Bot is Deployed?
+
+**Currently Active:** Simplified LLM-First Bot
+- File: `src/app-simple-llm.js`
+- 100% AI-driven conversations
+- Comprehensive knowledge base
+- Natural, intelligent responses
+
+**Alternative:** Complex Flow-Based Bot
+- File: `src/app-enterprise.js`
+- Pattern matching with AI fallback
+- See "Switching Between Bots" section below
 
 ## 📋 Prerequisites
 
 ### Required Environment Variables
 
-Set these in your deployment platform:
+**For Simplified LLM Bot (Current):**
 
 ```env
-# Essential - Supabase Database
+# REQUIRED - Azure OpenAI
+AZURE_OPENAI_API_KEY=your_azure_openai_key
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT=gpt-4
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+
+# OPTIONAL - Supabase (for logging)
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Optional - AI Integration
-AZURE_OPENAI_API_KEY=your_azure_openai_key
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_DEPLOYMENT=your_model_deployment_name
+# OPTIONAL - Redis (for session management)
+REDIS_URL=redis://localhost:6379
 
-# Optional - Redis (uses memory if not provided)
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# Optional - Server Configuration
+# OPTIONAL - Server Configuration
 PORT=3000
 NODE_ENV=production
+LOG_LEVEL=info
 ```
 
-## 🐳 Coolify Deployment
+**For Complex Flow-Based Bot:**
+- Same as above, all variables optional except Azure OpenAI
+- Supabase recommended for template management
 
-### Method 1: Direct Git Deployment
+## 🐳 Coolify Deployment (Recommended)
+
+### Recommended Configuration
+
+**Use `Dockerfile.bot` for bot-only deployment (smaller, faster):**
 
 1. **In Coolify Dashboard:**
    - Create new application
@@ -39,26 +61,51 @@ NODE_ENV=production
 
 2. **Build Configuration:**
    ```
-   Build Command: npm run build
+   Dockerfile: Dockerfile.bot
+   Build Command: (leave default)
    Start Command: npm run start:prod
    Port: 3000
    ```
 
 3. **Environment Variables:**
-   Add all required environment variables in Coolify's environment section.
+   Add required variables (see Prerequisites section above)
+   - Azure OpenAI credentials (REQUIRED)
+   - Supabase (optional)
+   - Redis (optional)
 
-4. **Deploy:**
-   - Coolify will automatically build and deploy
-   - Health check available at `/api/status`
+4. **Persistent Storage (Important):**
+   ```
+   Volume Mount: /app/wa_session
+   ```
+   This preserves WhatsApp session between deployments
 
-### Method 2: Docker Build
+5. **Deploy:**
+   - Click Deploy
+   - Check logs for QR code (first time only)
+   - Scan QR with WhatsApp to authenticate
 
-If the automatic build fails, you can use Docker:
+### Alternative: Full Stack Deployment
 
-```bash
-# In your repository root
-docker build -t whatsapp-bot .
-docker run -p 3000:3000 --env-file .env whatsapp-bot
+Use `Dockerfile` if you need admin dashboard:
+
+```yaml
+Dockerfile: Dockerfile
+Start Command: npm start
+```
+
+Note: Larger build, includes Next.js dashboard
+
+### Verifying Deployment
+
+**Check logs for:**
+```
+✅ Simplified LLM Bot started
+✅ WhatsApp connected successfully
+```
+
+**NOT:**
+```
+🤖 Enterprise WhatsApp Bot initialized  # This is the complex bot
 ```
 
 ## 🐋 Docker Deployment
@@ -258,17 +305,83 @@ If you encounter deployment issues:
 4. **Database access:** Verify Supabase connectivity
 5. **Resources:** Ensure adequate CPU/memory allocation
 
+## 🔄 Switching Between Bots
+
+### Currently Active: Simplified LLM Bot
+
+To switch to Complex Flow-Based Bot:
+
+**Method 1: Update package.json (Permanent)**
+```json
+{
+  "main": "src/app-enterprise.js",
+  "scripts": {
+    "start:prod": "NODE_ENV=production node src/app-enterprise.js"
+  }
+}
+```
+Then redeploy.
+
+**Method 2: Override Start Command in Coolify (Quick)**
+```
+Start Command: node src/app-enterprise.js
+```
+Redeploy - no code changes needed.
+
+**Method 3: Update scripts/start.js**
+Change line 146:
+```javascript
+const child = spawn('node', ['src/app-enterprise.js'], {
+```
+
+### Comparison
+
+| Feature | Simplified (Active) | Complex |
+|---------|---------------------|---------|
+| **Code** | 200 lines | 1000+ lines |
+| **AI Usage** | Every message | ~10% of messages |
+| **Cost** | Higher tokens | Lower tokens |
+| **Response** | Natural conversation | Menu-driven |
+| **Maintenance** | Easy (1 knowledge base) | Complex (templates, flows) |
+
 ## 📝 Deployment Checklist
 
-- [ ] Repository cloned and up to date
-- [ ] Environment variables configured
-- [ ] Database tables created in Supabase
+- [ ] Repository cloned and up to date (`git pull origin master`)
+- [ ] Environment variables configured (Azure OpenAI REQUIRED)
+- [ ] Correct Dockerfile selected (`Dockerfile.bot` recommended)
+- [ ] Verified which bot is active (check package.json main field)
+- [ ] Persistent volume for /app/wa_session configured
 - [ ] Build process completes successfully
-- [ ] Health check endpoint responds
-- [ ] WhatsApp session persistence configured
-- [ ] Monitoring and logging enabled
-- [ ] Backup strategy in place
+- [ ] Check deployment logs for correct bot startup message
+- [ ] Scan QR code and authenticate WhatsApp (first time)
+- [ ] Test bot with sample messages
+- [ ] Monitor token usage and costs (especially for simplified bot)
+
+## 🐛 Troubleshooting
+
+### "formatAIResponseWithMenu is not a function"
+- **Fixed in:** commit `4b4c6ca`
+- **Solution:** Pull latest code and redeploy
+
+### Wrong bot is running
+1. Check `package.json` → `main` field
+2. Check `scripts/start.js` → line 146
+3. Check Coolify start command override
+4. Look at startup logs for bot identifier
+
+### High token costs (Simplified Bot)
+- Simplified bot uses AI for every message
+- Expected: 500-1000 tokens per conversation
+- Switch to Complex bot if cost is concern
+
+### QR Code not appearing
+- Check container logs in Coolify
+- QR code prints to stdout on first run
+- Session persists in /app/wa_session after first scan
 
 ---
 
-**Need help?** Check the main [README.md](README.md) or create an issue in the repository.
+**Need help?**
+- Check [SIMPLE_LLM_APPROACH.md](SIMPLE_LLM_APPROACH.md) for bot architecture
+- Check main [README.md](README.md) for project overview
+- Create an issue in the repository
