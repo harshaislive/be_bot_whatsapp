@@ -421,13 +421,9 @@ Please choose from our menu:
             return { handler: this.handleCollectiveInfoSubmission.bind(this), reason: 'info_submission', param: originalMessage };
         }
 
-        if (context.currentFlow === 'intent_confirmation') {
-            return { handler: this.handleConfirmationResponse.bind(this), reason: 'confirmation', param: originalMessage };
-        }
-
         // 4. DIRECT NUMBERED OPTIONS (main menu)
         // Accept numbers 1-5 from ANY flow EXCEPT those where numbers have different meanings
-        const excludedFlows = ['hospitality', 'intent_confirmation'];
+        const excludedFlows = ['hospitality'];
         if (['1', '2', '3', '4', '5'].includes(lowerMessage) && (!excludedFlows.includes(context.currentFlow))) {
             return { handler: this.handleNumberedOption.bind(this), reason: 'main_menu_option', param: lowerMessage };
         }
@@ -471,66 +467,68 @@ Please choose from our menu:
         return null;
     }
 
-    // 🤖 AI INTENT RECOGNITION - Uses LLM to understand user intent
+    // 🤖 AI FALLBACK - Natural language response with contextual help
     async handleAIFallback(userPhone, messageText, userProfile, context) {
-        console.log('🤖 AI Intent Recognition triggered for natural language input');
+        console.log('🤖 AI Fallback triggered for natural language input');
 
         try {
-            // Use AI to recognize which option (1-5) the user wants
-            const recognizedIntent = await azureOpenAI.recognizeIntent(messageText);
-            console.log(`🎯 AI recognized intent: ${recognizedIntent}`);
+            // Build context for AI
+            const contextPrompt = `User message: "${messageText}"`;
 
-            // If intent is 0 (unclear/greeting/off-topic), show error fallback
-            if (recognizedIntent === '0') {
-                console.log('❓ Intent unclear - showing error fallback');
+            // Get conversation history
+            const conversationHistory = await sessionManager.getConversationHistory(userPhone, 3);
 
-                const errorMessage = templateService.getFallbackMessage('error_fallback');
-                await this.sendQuickMessage(userPhone, errorMessage);
-                return;
-            }
+            // Get AI response with strict guidelines
+            const aiResponse = await azureOpenAI.generateContextualResponse(
+                contextPrompt,
+                conversationHistory,
+                userProfile
+            );
 
-            // If intent is 1-5, ask user to confirm
-            if (['1', '2', '3', '4', '5'].includes(recognizedIntent)) {
-                console.log(`✅ Valid intent recognized: Option ${recognizedIntent}`);
+            // Check if AI is redirecting to menu/contact
+            const aiContent = aiResponse.content.toLowerCase();
+            const isRedirectingToMenu = aiContent.includes('contact us') ||
+                                       aiContent.includes('crm@beforest.co') ||
+                                       aiContent.includes('menu') ||
+                                       aiContent.includes('option');
 
-                // Generate confirmation message
-                const optionNames = {
-                    '1': 'Collective Visit',
-                    '2': 'Beforest Experiences',
-                    '3': 'Bewild Produce',
-                    '4': 'Beforest Hospitality',
-                    '5': 'Contact Beforest Team'
-                };
+            // Send AI response with menu
+            const fullResponse = this.formatAIResponseWithMenu(aiResponse.content);
 
-                const confirmationMessage = `I understand you're interested in ${optionNames[recognizedIntent]}.
+            await this.sendContinueTypingMessage(userPhone, fullResponse, 500);
 
-Would you like to proceed with this option?
+            // Update conversation history
+            await sessionManager.addToConversationHistory(userPhone, fullResponse, 'assistant');
 
-Reply "yes" to continue or choose a number (1-5) from the menu.`;
-
-                await this.sendContinueTypingMessage(userPhone, confirmationMessage, 400);
-
-                // Set session to await confirmation
-                await sessionManager.setContext(userPhone, {
-                    currentFlow: 'intent_confirmation',
-                    recognizedOption: recognizedIntent,
-                    menuLevel: 1
-                });
-
-                return;
-            }
-
-            // If AI returned something unexpected, show error
-            console.log('⚠️ AI returned unexpected intent:', recognizedIntent);
-            const errorMessage = templateService.getFallbackMessage('error_fallback');
-            await this.sendQuickMessage(userPhone, errorMessage);
+            console.log(`✅ AI response sent${isRedirectingToMenu ? ' (with menu guidance)' : ''}`);
 
         } catch (error) {
-            console.error('❌ AI intent recognition error:', error);
+            console.error('❌ AI fallback error:', error);
 
-            // Show error fallback
-            const errorMessage = templateService.getFallbackMessage('error_fallback');
-            await this.sendQuickMessage(userPhone, errorMessage);
+            try {
+                // Try to get error fallback template from database
+                const template = await templateService.getTemplate('error_fallback');
+
+                let errorMessage;
+                if (template) {
+                    errorMessage = template.content;
+                    console.log('📄 Using dynamic error fallback template from database');
+                } else {
+                    errorMessage = templateService.getFallbackMessage('error_fallback');
+                    console.log('⚠️  Using hardcoded error fallback - template not found');
+                }
+
+                await this.sendQuickMessage(userPhone, errorMessage);
+            } catch (fallbackError) {
+                // Ultimate emergency fallback
+                console.error('❌ Error fallback template failed:', fallbackError);
+                await this.sendQuickMessage(userPhone,
+                    'I don\'t have that information right now.\n\n' +
+                    'Type "menu" to see our services or contact us:\n' +
+                    '📧 crm@beforest.co\n' +
+                    '📞 +91 7680070541'
+                );
+            }
         }
     }
 
@@ -954,36 +952,6 @@ Luxury tents with modern amenities set amidst striking rockscapes in a farming c
         } else {
             await this.sendMessage(userPhone, 'Please select 1 for Blyton Bungalow or 2 for Glamping.');
         }
-    }
-
-    async handleConfirmationResponse(userPhone, messageText, userProfile, context) {
-        const lowerMessage = messageText.toLowerCase().trim();
-
-        if (['yes', 'y', 'correct', 'right', 'ok', 'okay'].includes(lowerMessage)) {
-            console.log(`✅ User confirmed option ${context.recognizedOption}`);
-            await this.handleNumberedOption(userPhone, context.recognizedOption, userProfile);
-            return;
-        }
-
-        if (['no', 'n', 'wrong', 'incorrect', 'nope'].includes(lowerMessage)) {
-            console.log('❌ User rejected suggestion - showing menu');
-            await this.handleMenu(userPhone);
-            return;
-        }
-
-        // Direct number selection during confirmation
-        if (['1', '2', '3', '4', '5'].includes(lowerMessage)) {
-            console.log(`➡️ User chose different option: ${lowerMessage}`);
-            await this.handleNumberedOption(userPhone, lowerMessage, userProfile);
-            return;
-        }
-
-        // If unclear, ask again with cleaner message
-        const clarificationMessage = `Please confirm:
-
-Reply "yes" to proceed or choose a number (1-5) from the menu.`;
-
-        await this.sendMessage(userPhone, clarificationMessage);
     }
 
     async handleEscalation(userPhone, userProfile, reason) {
