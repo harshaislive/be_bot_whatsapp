@@ -62,7 +62,17 @@ class UserProfileManager {
             return this.profiles.get(phone);
         } catch (error) {
             logger.error('Error getting user profile:', error);
-            return null;
+            // Return a minimal valid profile instead of null
+            return {
+                phone,
+                createdAt: new Date(),
+                lastActive: new Date(),
+                preferences: { language: 'en' },
+                history: { totalMessages: 0 },
+                personalInfo: { name: null, email: null },
+                engagement: { level: 'new', score: 0 },
+                support: { ticketHistory: [], escalationCount: 0 }
+            };
         }
     }
 

@@ -533,7 +533,7 @@ Please choose from our menu:
     }
 
     async handleWelcome(userPhone, userProfile) {
-        const userName = userProfile.personalInfo.name || 'there';
+        const userName = userProfile?.personalInfo?.name || 'there';
 
         try {
             // Get welcome message template from database
@@ -955,7 +955,7 @@ Luxury tents with modern amenities set amidst striking rockscapes in a farming c
     }
 
     async handleEscalation(userPhone, userProfile, reason) {
-        const userName = userProfile.personalInfo.name || 'Customer';
+        const userName = userProfile?.personalInfo?.name || 'Customer';
 
         const escalationMessage = [
             `Thank you ${userName}!`,
