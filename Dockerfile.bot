@@ -34,8 +34,8 @@ COPY --chown=botuser:nodejs scripts ./scripts
 COPY --chown=botuser:nodejs build.js ./
 COPY --chown=botuser:nodejs package*.json ./
 
-# Create necessary directories
-RUN mkdir -p logs wa_session && chown -R botuser:nodejs logs wa_session
+# Create necessary directories with proper permissions
+RUN mkdir -p logs wa_session auth_info_baileys && chown -R botuser:nodejs logs wa_session auth_info_baileys
 
 # Expose bot port
 EXPOSE 3000
