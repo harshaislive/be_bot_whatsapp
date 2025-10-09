@@ -1,7 +1,7 @@
 import makeWASocket, { DisconnectReason, useMultiFileAuthState } from '@whiskeysockets/baileys';
 import pino from 'pino';
-import azureOpenAI from './ai/openai.js';
-import logger from './utils/logger.js';
+import { azureOpenAI } from './ai/openai.js';
+import { logger } from './utils/logger.js';
 
 /**
  * SIMPLIFIED LLM-FIRST WHATSAPP BOT
