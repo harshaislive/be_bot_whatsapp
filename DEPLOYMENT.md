@@ -1,27 +1,27 @@
 # 🚀 Deployment Guide
 
-> **🎯 ACTIVE BOT: Simplified LLM-First** (`src/app-simple-llm.js`)
+> **🎯 ACTIVE BOT: Complex Flow-Based** (`src/app-enterprise.js`)
 >
 > This guide covers deploying to Coolify, Docker, and cloud platforms.
 
 ## 🤖 Which Bot is Deployed?
 
-**Currently Active:** Simplified LLM-First Bot
+**Currently Active:** Complex Flow-Based Bot (Enterprise)
+- File: `src/app-enterprise.js`
+- 90% static pattern matching, 10% AI fallback
+- Lower token costs, faster responses
+- Menu-driven with structured flows
+
+**Alternative:** Simplified LLM-First Bot
 - File: `src/app-simple-llm.js`
 - 100% AI-driven conversations
-- Comprehensive knowledge base
-- Natural, intelligent responses
-
-**Alternative:** Complex Flow-Based Bot
-- File: `src/app-enterprise.js`
-- Pattern matching with AI fallback
 - See "Switching Between Bots" section below
 
 ## 📋 Prerequisites
 
 ### Required Environment Variables
 
-**For Simplified LLM Bot (Current):**
+**For Complex Flow-Based Bot (Current):**
 
 ```env
 # REQUIRED - Azure OpenAI
@@ -30,7 +30,7 @@ AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_OPENAI_DEPLOYMENT=gpt-4
 AZURE_OPENAI_API_VERSION=2024-02-15-preview
 
-# OPTIONAL - Supabase (for logging)
+# RECOMMENDED - Supabase (for template management & logging)
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
 
@@ -43,9 +43,10 @@ NODE_ENV=production
 LOG_LEVEL=info
 ```
 
-**For Complex Flow-Based Bot:**
-- Same as above, all variables optional except Azure OpenAI
-- Supabase recommended for template management
+**For Simplified LLM Bot:**
+- Same as above
+- Supabase optional (for logging only)
+- Azure OpenAI is critical (used for every message)
 
 ## 🐳 Coolify Deployment (Recommended)
 
@@ -99,13 +100,14 @@ Note: Larger build, includes Next.js dashboard
 
 **Check logs for:**
 ```
-✅ Simplified LLM Bot started
+🤖 Enterprise WhatsApp Bot initialized
+📋 Static routing patterns loaded
 ✅ WhatsApp connected successfully
 ```
 
 **NOT:**
 ```
-🤖 Enterprise WhatsApp Bot initialized  # This is the complex bot
+✅ Simplified LLM Bot started  # This is the simple LLM bot
 ```
 
 ## 🐋 Docker Deployment
@@ -307,16 +309,16 @@ If you encounter deployment issues:
 
 ## 🔄 Switching Between Bots
 
-### Currently Active: Simplified LLM Bot
+### Currently Active: Complex Flow-Based Bot (Enterprise)
 
-To switch to Complex Flow-Based Bot:
+To switch to Simplified LLM Bot:
 
 **Method 1: Update package.json (Permanent)**
 ```json
 {
-  "main": "src/app-enterprise.js",
+  "main": "src/app-simple-llm.js",
   "scripts": {
-    "start:prod": "NODE_ENV=production node src/app-enterprise.js"
+    "start:prod": "NODE_ENV=production node src/app-simple-llm.js"
   }
 }
 ```
@@ -324,25 +326,26 @@ Then redeploy.
 
 **Method 2: Override Start Command in Coolify (Quick)**
 ```
-Start Command: node src/app-enterprise.js
+Start Command: node src/app-simple-llm.js
 ```
 Redeploy - no code changes needed.
 
 **Method 3: Update scripts/start.js**
 Change line 146:
 ```javascript
-const child = spawn('node', ['src/app-enterprise.js'], {
+const child = spawn('node', ['src/app-simple-llm.js'], {
 ```
 
 ### Comparison
 
-| Feature | Simplified (Active) | Complex |
-|---------|---------------------|---------|
-| **Code** | 200 lines | 1000+ lines |
-| **AI Usage** | Every message | ~10% of messages |
-| **Cost** | Higher tokens | Lower tokens |
-| **Response** | Natural conversation | Menu-driven |
-| **Maintenance** | Easy (1 knowledge base) | Complex (templates, flows) |
+| Feature | Complex (Active) | Simplified |
+|---------|------------------|------------|
+| **Code** | 1000+ lines | 200 lines |
+| **AI Usage** | ~10% of messages | Every message |
+| **Cost** | Lower tokens | Higher tokens |
+| **Response** | Menu-driven | Natural conversation |
+| **Speed** | Instant (pattern match) | 1-2s (AI call) |
+| **Maintenance** | Complex (templates, flows) | Easy (1 knowledge base) |
 
 ## 📝 Deployment Checklist
 
@@ -369,10 +372,10 @@ const child = spawn('node', ['src/app-enterprise.js'], {
 3. Check Coolify start command override
 4. Look at startup logs for bot identifier
 
-### High token costs (Simplified Bot)
-- Simplified bot uses AI for every message
-- Expected: 500-1000 tokens per conversation
-- Switch to Complex bot if cost is concern
+### High token costs
+- Complex bot uses AI for ~10% of messages (natural language fallback)
+- Simplified bot uses AI for every message (500-1000 tokens each)
+- Currently using Complex bot = lower costs
 
 ### QR Code not appearing
 - Check container logs in Coolify

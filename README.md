@@ -1,11 +1,11 @@
-# 🤖 Beforest WhatsApp Bot
+# 🤖 Beforest WhatsApp Bot - Enterprise Edition
 
-> **🎯 CURRENTLY ACTIVE: Simplified LLM-First Bot** (`app-simple-llm.js`)
-> 100% AI-driven conversations with comprehensive knowledge base. See [SIMPLE_LLM_APPROACH.md](SIMPLE_LLM_APPROACH.md) for details.
+> **🎯 CURRENTLY ACTIVE: Complex Flow-Based Bot** (`app-enterprise.js`)
+> Pattern matching with AI fallback for optimal performance and cost efficiency.
 
 A sophisticated WhatsApp bot with two deployment options:
-- **Simple LLM-First** (Active): 200 lines, AI handles everything intelligently
-- **Complex Flow-Based**: 1000+ lines, pattern matching with AI fallback
+- **Complex Flow-Based** (Active): Pattern matching, 90% static routing, 10% AI fallback
+- **Simple LLM-First**: 200 lines, AI handles everything (see [SIMPLE_LLM_APPROACH.md](SIMPLE_LLM_APPROACH.md))
 
 ## 🌟 Features
 
