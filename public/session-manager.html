@@ -545,10 +545,13 @@
                 statusDetails.classList.add('hidden');
                 qrContainer.classList.remove('hidden');
 
-                // Show logout button if there's a Supabase session (stale session)
-                if ((status.session && status.session.hasSession) || status.whatsapp.lastConnected) {
+                // Show logout button if there's any session data (Supabase, lastConnected, or botNumber)
+                // This handles cases where bot has stale auth files
+                if ((status.session && status.session.hasSession) ||
+                    status.whatsapp.lastConnected ||
+                    status.whatsapp.botNumber) {
                     logoutBtn.classList.remove('hidden');
-                    logoutBtn.querySelector('span:last-child').textContent = 'Clear Session & Get Fresh QR';
+                    logoutBtn.querySelector('span:last-child').textContent = 'Clear Stale Session';
                 } else {
                     logoutBtn.classList.add('hidden');
                 }
