@@ -295,6 +295,60 @@ class WhatsAppController {
             });
         }
     }
+
+    // Debug endpoint to see filesystem state
+    async getDebugInfo(req, res) {
+        try {
+            const qrPath = path.join(process.cwd(), 'logs', 'whatsapp-qr.png');
+            const authPath = path.join(process.cwd(), 'wa_session');
+
+            const debug = {
+                cwd: process.cwd(),
+                qrFile: {
+                    exists: fs.existsSync(qrPath),
+                    path: qrPath,
+                    age: null
+                },
+                authFolder: {
+                    exists: fs.existsSync(authPath),
+                    path: authPath,
+                    files: []
+                },
+                bot: {
+                    running: !!this.bot,
+                    connected: this.bot?.isConnected || false,
+                    hasSocket: !!this.bot?.socket,
+                    botNumber: this.bot?.socket?.user?.id || null
+                }
+            };
+
+            if (debug.qrFile.exists) {
+                const stats = fs.statSync(qrPath);
+                debug.qrFile.age = Math.floor((Date.now() - stats.mtimeMs) / 1000);
+                debug.qrFile.size = stats.size;
+            }
+
+            if (debug.authFolder.exists) {
+                try {
+                    debug.authFolder.files = fs.readdirSync(authPath);
+                } catch (err) {
+                    debug.authFolder.error = err.message;
+                }
+            }
+
+            res.json({
+                success: true,
+                debug
+            });
+
+        } catch (error) {
+            logger.error('Error getting debug info:', error);
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    }
 }
 
 export const whatsappController = new WhatsAppController();

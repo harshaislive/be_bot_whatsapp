@@ -44,6 +44,11 @@ router.post('/session/validate', async (req, res) => {
     await whatsappController.validatePassword(req, res);
 });
 
+// Debug endpoint
+router.get('/debug', async (req, res) => {
+    await whatsappController.getDebugInfo(req, res);
+});
+
 // API Info
 router.get('/', (req, res) => {
     res.json({
