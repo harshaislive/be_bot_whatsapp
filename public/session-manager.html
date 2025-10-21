@@ -543,8 +543,15 @@
 
             } else {
                 statusDetails.classList.add('hidden');
-                logoutBtn.classList.add('hidden');
                 qrContainer.classList.remove('hidden');
+
+                // Show logout button if there's a Redis session (stale session)
+                if (status.redis.hasSession || status.whatsapp.lastConnected) {
+                    logoutBtn.classList.remove('hidden');
+                    logoutBtn.querySelector('span:last-child').textContent = 'Clear Session & Get Fresh QR';
+                } else {
+                    logoutBtn.classList.add('hidden');
+                }
 
                 // Start checking for QR code
                 loadQRCode();
