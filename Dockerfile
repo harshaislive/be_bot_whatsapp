@@ -39,8 +39,11 @@ COPY --from=dashboard-builder /app/admin-dashboard/public ./admin-dashboard/publ
 # Copy source code
 COPY --chown=nextjs:nodejs . .
 
+# Ensure public folder is copied (for session manager)
+COPY --chown=nextjs:nodejs public ./public
+
 # Create necessary directories with proper permissions
-RUN mkdir -p logs wa_session auth_info_baileys && chown -R nextjs:nodejs logs wa_session auth_info_baileys
+RUN mkdir -p logs wa_session auth_info_baileys public && chown -R nextjs:nodejs logs wa_session auth_info_baileys public
 
 # Expose port
 EXPOSE 3000
