@@ -31,11 +31,15 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy bot source code only (no admin dashboard)
 COPY --chown=botuser:nodejs src ./src
 COPY --chown=botuser:nodejs scripts ./scripts
+COPY --chown=botuser:nodejs public ./public
 COPY --chown=botuser:nodejs build.js ./
 COPY --chown=botuser:nodejs package*.json ./
 
 # Create necessary directories with proper permissions
 RUN mkdir -p logs wa_session auth_info_baileys && chown -R botuser:nodejs logs wa_session auth_info_baileys
+
+# Verify public folder exists
+RUN echo "=== Verifying public folder ===" && ls -la public/ && echo "✅ Public folder confirmed"
 
 # Expose bot port
 EXPOSE 3000
