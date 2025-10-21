@@ -56,18 +56,18 @@ class EnterpriseWhatsAppBot {
             // Initialize auth state
             const { state, saveCreds } = await useMultiFileAuthState('./wa_session');
 
-            // Only clear auth if both Redis and local auth are empty (first time)
-            const redisSession = await redisService.loadWhatsAppSession();
+            // Only clear auth if both Supabase and local auth are empty (first time)
+            const supabaseSession = await supabaseService.loadWhatsAppSession();
             const fs = await import('fs');
             const authPath = './wa_session';
             const hasLocalAuth = fs.existsSync(authPath) && fs.readdirSync(authPath).length > 0;
 
-            if (!redisSession && !hasLocalAuth && redisService.getStatus().connected) {
+            if (!supabaseSession && !hasLocalAuth) {
                 console.log('🔄 First time setup - no sessions found anywhere');
-                logger.info('First time setup - no WhatsApp session found in Redis or locally');
-            } else if (redisSession && !hasLocalAuth) {
-                console.log('🔄 Redis has session but local auth missing, allowing fresh pairing...');
-                logger.info('Redis session exists but local auth missing - allowing fresh pairing');
+                logger.info('First time setup - no WhatsApp session found in Supabase or locally');
+            } else if (supabaseSession && !hasLocalAuth) {
+                console.log('🔄 Supabase has session but local auth missing, allowing fresh pairing...');
+                logger.info('Supabase session exists but local auth missing - allowing fresh pairing');
             }
 
             // Create WhatsApp socket
@@ -205,17 +205,20 @@ class EnterpriseWhatsAppBot {
                     features: ['AI', 'Analytics', 'User Profiling', 'Session Management', 'Rate Limiting']
                 });
 
-                // Save WhatsApp session to Redis for persistence
+                // Save WhatsApp session to Supabase for persistence
                 try {
-                    await redisService.saveWhatsAppSession({
+                    await supabaseService.saveWhatsAppSession({
                         connected: true,
-                        timestamp: new Date().toISOString(),
-                        botNumber: this.socket?.user?.id || 'unknown'
+                        botNumber: this.socket?.user?.id || 'unknown',
+                        metadata: {
+                            timestamp: new Date().toISOString(),
+                            lastConnected: new Date().toISOString()
+                        }
                     });
-                    console.log('💾 WhatsApp session saved to Redis');
-                    logger.info('WhatsApp session saved to Redis for persistence');
+                    console.log('💾 WhatsApp session saved to Supabase');
+                    logger.info('WhatsApp session saved to Supabase for persistence');
                 } catch (error) {
-                    logger.warn('Failed to save WhatsApp session to Redis:', error);
+                    logger.warn('Failed to save WhatsApp session to Supabase:', error);
                 }
             }
         });

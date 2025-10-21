@@ -1,5 +1,6 @@
 import { logger } from '../utils/logger.js';
 import { redisService } from '../services/redisService.js';
+import { supabaseService } from '../services/supabaseService.js';
 import { config } from '../config/config.js';
 import path from 'path';
 import fs from 'fs';
@@ -41,23 +42,7 @@ class WhatsAppController {
                 });
             }
 
-            // Clear WhatsApp session from Redis
-            await redisService.deleteWhatsAppSession();
-            console.log('🗑️ WhatsApp session cleared from Redis');
-
-            // Clear local auth files
-            try {
-                const fs = await import('fs');
-                const authPath = './wa_session';
-                if (fs.existsSync(authPath)) {
-                    fs.rmSync(authPath, { recursive: true, force: true });
-                    console.log('🗑️ Local auth files cleared');
-                }
-            } catch (error) {
-                logger.warn('Could not clear local auth files:', error);
-            }
-
-            // Close current connection (if exists and connected)
+            // Step 1: Close current connection first (if exists and connected)
             try {
                 if (this.bot.socket && this.bot.isConnected) {
                     await this.bot.socket.logout();
@@ -70,11 +55,31 @@ class WhatsAppController {
                 console.log('ℹ️  Logout skipped (bot already disconnected):', error.message);
             }
 
-            // Restart bot for fresh login
+            // Step 2: Clear WhatsApp session from Supabase MULTIPLE TIMES to ensure it's gone
+            await supabaseService.deleteWhatsAppSession();
+            console.log('🗑️ WhatsApp session cleared from Supabase (attempt 1)');
+
+            // Wait a bit and clear again to be absolutely sure
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await supabaseService.deleteWhatsAppSession();
+            console.log('🗑️ WhatsApp session cleared from Supabase (attempt 2)');
+
+            // Step 3: Clear local auth files
+            try {
+                const authPath = './wa_session';
+                if (fs.existsSync(authPath)) {
+                    fs.rmSync(authPath, { recursive: true, force: true });
+                    console.log('🗑️ Local auth files cleared');
+                }
+            } catch (error) {
+                logger.warn('Could not clear local auth files:', error);
+            }
+
+            // Step 4: Restart bot after longer delay to ensure clean state
             setTimeout(() => {
-                console.log('🔄 Restarting bot for fresh login...');
+                console.log('🔄 Restarting bot for fresh login with clean state...');
                 this.bot.start();
-            }, 2000);
+            }, 3000);
 
             res.json({
                 success: true,
@@ -97,19 +102,18 @@ class WhatsAppController {
     // Get WhatsApp connection status
     async getStatus(req, res) {
         try {
-            const redisSession = await redisService.loadWhatsAppSession();
-            const redisStatus = redisService.getStatus();
+            const supabaseSession = await supabaseService.loadWhatsAppSession();
+            const sessionStatus = await supabaseService.getWhatsAppSessionStatus();
 
             const status = {
                 whatsapp: {
                     connected: this.bot?.isConnected || false,
-                    botNumber: this.bot?.socket?.user?.id || null,
-                    lastConnected: redisSession?.timestamp || null
+                    botNumber: this.bot?.socket?.user?.id || supabaseSession?.botNumber || null,
+                    lastConnected: supabaseSession?.lastConnected || null
                 },
-                redis: {
-                    connected: redisStatus.connected,
-                    enabled: redisStatus.enabled,
-                    hasSession: !!redisSession
+                session: {
+                    hasSession: sessionStatus.hasSession,
+                    storedInSupabase: sessionStatus.connected
                 },
                 timestamp: new Date().toISOString()
             };
@@ -134,16 +138,16 @@ class WhatsAppController {
         try {
             logger.info('Clear all sessions requested via API');
 
-            // Clear WhatsApp session
-            await redisService.deleteWhatsAppSession();
+            // Clear WhatsApp session from Supabase
+            await supabaseService.deleteWhatsAppSession();
 
-            // Clear all user sessions
+            // Clear all user sessions from Redis (still used for user sessions)
             const activeUsers = await redisService.getActiveUsers();
             for (const user of activeUsers) {
                 await redisService.deleteUserSession(user);
             }
 
-            console.log(`🗑️ Cleared WhatsApp session and ${activeUsers.length} user sessions`);
+            console.log(`🗑️ Cleared WhatsApp session from Supabase and ${activeUsers.length} user sessions from Redis`);
 
             res.json({
                 success: true,

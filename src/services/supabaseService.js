@@ -317,6 +317,140 @@ class SupabaseService {
             logger.error('Failed to update daily analytics:', error);
         }
     }
+
+    // ============================================
+    // WhatsApp Session Management (NEW)
+    // ============================================
+
+    async saveWhatsAppSession(sessionData) {
+        if (!this.client) {
+            logger.warn('Supabase not configured - skipping WhatsApp session save');
+            return false;
+        }
+
+        try {
+            const { data, error } = await this.client
+                .from('whatsapp_sessions')
+                .upsert({
+                    id: '00000000-0000-0000-0000-000000000001', // Single session (we only have one bot)
+                    bot_number: sessionData.botNumber || null,
+                    connected: sessionData.connected || false,
+                    session_data: sessionData.metadata || {},
+                    last_connected: sessionData.connected ? new Date().toISOString() : null,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'id' })
+                .select()
+                .single();
+
+            if (error) {
+                logger.error('Error saving WhatsApp session to Supabase:', error);
+                return false;
+            }
+
+            logger.info('WhatsApp session saved to Supabase', {
+                botNumber: sessionData.botNumber,
+                connected: sessionData.connected
+            });
+
+            return true;
+        } catch (error) {
+            logger.error('Failed to save WhatsApp session:', error);
+            return false;
+        }
+    }
+
+    async loadWhatsAppSession() {
+        if (!this.client) {
+            logger.warn('Supabase not configured - skipping WhatsApp session load');
+            return null;
+        }
+
+        try {
+            const { data, error } = await this.client
+                .from('whatsapp_sessions')
+                .select('*')
+                .eq('id', '00000000-0000-0000-0000-000000000001')
+                .single();
+
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    // No session found - this is normal on first run
+                    logger.info('No WhatsApp session found in Supabase');
+                    return null;
+                }
+                logger.error('Error loading WhatsApp session from Supabase:', error);
+                return null;
+            }
+
+            logger.info('WhatsApp session loaded from Supabase', {
+                botNumber: data.bot_number,
+                connected: data.connected,
+                lastConnected: data.last_connected
+            });
+
+            return {
+                botNumber: data.bot_number,
+                connected: data.connected,
+                metadata: data.session_data,
+                lastConnected: data.last_connected,
+                timestamp: data.updated_at
+            };
+        } catch (error) {
+            logger.error('Failed to load WhatsApp session:', error);
+            return null;
+        }
+    }
+
+    async deleteWhatsAppSession() {
+        if (!this.client) {
+            logger.warn('Supabase not configured - skipping WhatsApp session delete');
+            return false;
+        }
+
+        try {
+            const { error } = await this.client
+                .from('whatsapp_sessions')
+                .delete()
+                .eq('id', '00000000-0000-0000-0000-000000000001');
+
+            if (error) {
+                logger.error('Error deleting WhatsApp session from Supabase:', error);
+                return false;
+            }
+
+            logger.info('WhatsApp session deleted from Supabase');
+            return true;
+        } catch (error) {
+            logger.error('Failed to delete WhatsApp session:', error);
+            return false;
+        }
+    }
+
+    async getWhatsAppSessionStatus() {
+        if (!this.client) return { connected: false, hasSession: false };
+
+        try {
+            const { data, error } = await this.client
+                .from('whatsapp_sessions')
+                .select('connected, bot_number, last_connected')
+                .eq('id', '00000000-0000-0000-0000-000000000001')
+                .single();
+
+            if (error || !data) {
+                return { connected: false, hasSession: false };
+            }
+
+            return {
+                connected: data.connected || false,
+                hasSession: true,
+                botNumber: data.bot_number,
+                lastConnected: data.last_connected
+            };
+        } catch (error) {
+            logger.error('Failed to get WhatsApp session status:', error);
+            return { connected: false, hasSession: false };
+        }
+    }
 }
 
 export const supabaseService = new SupabaseService();
