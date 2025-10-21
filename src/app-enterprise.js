@@ -186,6 +186,18 @@ class EnterpriseWhatsAppBot {
                         logger.warn('Error clearing Supabase session:', err);
                     }
 
+                    // Clear local auth files (critical for fresh QR generation!)
+                    try {
+                        const fs = await import('fs');
+                        const authPath = './wa_session';
+                        if (fs.existsSync(authPath)) {
+                            fs.rmSync(authPath, { recursive: true, force: true });
+                            console.log('🗑️ Local auth files deleted');
+                        }
+                    } catch (err) {
+                        logger.warn('Error clearing local auth files:', err);
+                    }
+
                     // Restart after short delay to generate fresh QR
                     setTimeout(() => {
                         console.log('♻️ Restarting bot for fresh QR code generation...');
