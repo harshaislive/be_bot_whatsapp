@@ -112,8 +112,8 @@ class WhatsAppController {
                     lastConnected: supabaseSession?.lastConnected || null
                 },
                 session: {
-                    hasSession: sessionStatus.hasSession,
-                    storedInSupabase: sessionStatus.connected
+                    hasSession: sessionStatus?.hasSession || false,
+                    storedInSupabase: sessionStatus?.connected || false
                 },
                 timestamp: new Date().toISOString()
             };
