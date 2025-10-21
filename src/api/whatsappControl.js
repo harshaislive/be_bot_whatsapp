@@ -102,8 +102,25 @@ class WhatsAppController {
     // Get WhatsApp connection status
     async getStatus(req, res) {
         try {
-            const supabaseSession = await supabaseService.loadWhatsAppSession();
-            const sessionStatus = await supabaseService.getWhatsAppSessionStatus();
+            let supabaseSession = null;
+            let sessionStatus = { connected: false, hasSession: false };
+
+            // Safely load session data
+            try {
+                supabaseSession = await supabaseService.loadWhatsAppSession();
+            } catch (err) {
+                logger.warn('Error loading Supabase session:', err);
+            }
+
+            // Safely get session status
+            try {
+                const result = await supabaseService.getWhatsAppSessionStatus();
+                if (result && typeof result === 'object') {
+                    sessionStatus = result;
+                }
+            } catch (err) {
+                logger.warn('Error getting session status:', err);
+            }
 
             const status = {
                 whatsapp: {
