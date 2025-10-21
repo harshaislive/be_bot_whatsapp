@@ -57,10 +57,17 @@ class WhatsAppController {
                 logger.warn('Could not clear local auth files:', error);
             }
 
-            // Close current connection
-            if (this.bot.socket) {
-                await this.bot.socket.logout();
-                console.log('🚪 WhatsApp connection closed');
+            // Close current connection (if exists and connected)
+            try {
+                if (this.bot.socket && this.bot.isConnected) {
+                    await this.bot.socket.logout();
+                    console.log('🚪 WhatsApp connection closed');
+                } else {
+                    console.log('ℹ️  Bot already disconnected, skipping logout');
+                }
+            } catch (error) {
+                // Ignore logout errors (bot might already be disconnected)
+                console.log('ℹ️  Logout skipped (bot already disconnected):', error.message);
             }
 
             // Restart bot for fresh login
