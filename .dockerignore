@@ -78,3 +78,7 @@ docker-compose*
 # Misc
 *.tgz
 *.tar.gz
+
+# EXPLICITLY INCLUDE public folder (needed for session manager)
+!public/
+!public/**
