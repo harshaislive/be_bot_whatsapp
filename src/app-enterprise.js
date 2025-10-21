@@ -99,6 +99,14 @@ class EnterpriseWhatsAppBot {
             app.use(express.json());
             app.use(express.urlencoded({ extended: true }));
 
+            // Serve static files from public directory
+            app.use(express.static('public'));
+
+            // Session manager page
+            app.get('/session', (req, res) => {
+                res.sendFile('session-manager.html', { root: 'public' });
+            });
+
             // API routes
             app.use('/api', apiRoutes);
 
@@ -107,6 +115,7 @@ class EnterpriseWhatsAppBot {
             this.apiServer = app.listen(apiPort, () => {
                 console.log(`🌐 API Server running on port ${apiPort}`);
                 console.log(`📡 Endpoints available at http://localhost:${apiPort}/api`);
+                console.log(`🔐 Session Manager available at http://localhost:${apiPort}/session`);
                 logger.info(`API server started on port ${apiPort}`);
             });
 

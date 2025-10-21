@@ -34,6 +34,11 @@ router.get('/status', async (req, res) => {
     await whatsappController.healthCheck(req, res);
 });
 
+// Get QR code image
+router.get('/whatsapp/qr', async (req, res) => {
+    await whatsappController.getQRCode(req, res);
+});
+
 // API Info
 router.get('/', (req, res) => {
     res.json({
@@ -42,6 +47,7 @@ router.get('/', (req, res) => {
         endpoints: {
             'POST /api/whatsapp/disconnect': 'Force disconnect WhatsApp for re-login',
             'GET /api/whatsapp/status': 'Get WhatsApp connection status',
+            'GET /api/whatsapp/qr': 'Get QR code image',
             'DELETE /api/sessions/clear': 'Clear all sessions',
             'GET /api/health': 'Health check'
         },

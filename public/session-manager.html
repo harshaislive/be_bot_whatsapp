@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Session Manager - Beforest Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .status-card {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .status-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #48bb78;
+        }
+
+        .status-dot.disconnected {
+            background: #f56565;
+            animation: none;
+        }
+
+        .status-dot.loading {
+            background: #ed8936;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .status-details {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .detail-label {
+            color: #718096;
+        }
+
+        .detail-value {
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .qr-container {
+            text-align: center;
+            padding: 24px;
+            background: white;
+            border-radius: 12px;
+            border: 2px dashed #cbd5e0;
+            margin-bottom: 24px;
+        }
+
+        .qr-container h3 {
+            color: #2d3748;
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+
+        .qr-image {
+            max-width: 300px;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .qr-instructions {
+            margin-top: 16px;
+            padding: 16px;
+            background: #fff5f5;
+            border-radius: 8px;
+            border-left: 4px solid #f56565;
+        }
+
+        .qr-instructions ol {
+            text-align: left;
+            margin-left: 20px;
+            color: #2d3748;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .qr-timer {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #e53e3e;
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #e53e3e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 101, 101, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #cbd5e0;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .alert-info {
+            background: #ebf8ff;
+            border-left: 4px solid #4299e1;
+            color: #2c5282;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+            color: #22543d;
+        }
+
+        .alert-warning {
+            background: #fffaf0;
+            border-left: 4px solid #ed8936;
+            color: #7c2d12;
+        }
+
+        .alert-error {
+            background: #fff5f5;
+            border-left: 4px solid #f56565;
+            color: #742a2a;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+            color: #718096;
+            font-size: 13px;
+        }
+
+        .auth-form {
+            text-align: center;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: #a0aec0;
+            font-size: 12px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>WhatsApp Session Manager</h1>
+            <p>Beforest Bot - Team Access Portal</p>
+        </div>
+
+        <!-- Authentication Form -->
+        <div id="authSection" class="hidden">
+            <div class="alert alert-info">
+                Please enter the access password to manage the WhatsApp session.
+            </div>
+            <form class="auth-form" onsubmit="authenticate(event)">
+                <input
+                    type="password"
+                    id="passwordInput"
+                    class="auth-input"
+                    placeholder="Enter access password"
+                    autocomplete="current-password"
+                    required
+                />
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <span>Unlock Session Manager</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent">
+            <!-- Status Card -->
+            <div class="status-card">
+                <div class="status-indicator">
+                    <div class="status-dot loading" id="statusDot"></div>
+                    <span class="status-text" id="statusText">Checking connection...</span>
+                </div>
+                <div class="status-details hidden" id="statusDetails">
+                    <div class="detail-row">
+                        <span class="detail-label">Bot Number:</span>
+                        <span class="detail-value" id="botNumber">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Last Connected:</span>
+                        <span class="detail-value" id="lastConnected">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Redis Status:</span>
+                        <span class="detail-value" id="redisStatus">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div id="alertContainer"></div>
+
+            <!-- QR Code Section -->
+            <div class="qr-container hidden" id="qrContainer">
+                <h3>Scan QR Code to Connect</h3>
+                <img id="qrImage" class="qr-image" alt="WhatsApp QR Code" />
+                <div class="qr-timer" id="qrTimer"></div>
+                <div class="qr-instructions">
+                    <ol>
+                        <li>Open WhatsApp on your phone</li>
+                        <li>Go to Settings → Linked Devices</li>
+                        <li>Tap "Link a Device"</li>
+                        <li>Scan the QR code above</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="button-group">
+                <button class="btn btn-secondary" onclick="refreshStatus()" id="refreshBtn">
+                    <span id="refreshIcon">🔄</span>
+                    <span>Refresh Status</span>
+                </button>
+                <button class="btn btn-danger hidden" onclick="logout()" id="logoutBtn">
+                    <span>🚪</span>
+                    <span>Logout & Delete Session</span>
+                </button>
+            </div>
+
+            <div class="last-updated">
+                Last updated: <span id="lastUpdateTime">-</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Beforest WhatsApp Bot • Session Manager v1.0</p>
+            <p style="margin-top: 8px; font-size: 11px;">
+                Manage your WhatsApp bot connection securely
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = window.location.origin;
+        const REFRESH_INTERVAL = 5000; // 5 seconds
+        const QR_REFRESH_INTERVAL = 3000; // 3 seconds for QR
+
+        let refreshTimer = null;
+        let qrRefreshTimer = null;
+        let isAuthenticated = false;
+        let currentPassword = '';
+
+        // Check if password is required (you can set this via environment variable)
+        const PASSWORD_REQUIRED = true;
+        const VALID_PASSWORD = 'beforest2025'; // Change this to your desired password
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (PASSWORD_REQUIRED && !isAuthenticated) {
+                showAuthForm();
+            } else {
+                isAuthenticated = true;
+                hideAuthForm();
+                initializeApp();
+            }
+        });
+
+        function showAuthForm() {
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+        }
+
+        function hideAuthForm() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+        }
+
+        function authenticate(event) {
+            event.preventDefault();
+            const password = document.getElementById('passwordInput').value;
+
+            if (password === VALID_PASSWORD) {
+                isAuthenticated = true;
+                currentPassword = password;
+                hideAuthForm();
+                initializeApp();
+                showAlert('Successfully authenticated!', 'success');
+            } else {
+                showAlert('Invalid password. Please try again.', 'error');
+                document.getElementById('passwordInput').value = '';
+            }
+        }
+
+        function initializeApp() {
+            refreshStatus();
+            startAutoRefresh();
+        }
+
+        async function refreshStatus() {
+            try {
+                const btn = document.getElementById('refreshBtn');
+                const icon = document.getElementById('refreshIcon');
+
+                // Show loading state
+                icon.style.animation = 'spin 0.8s linear infinite';
+                btn.disabled = true;
+
+                const response = await fetch(`${API_BASE}/api/whatsapp/status`);
+                const data = await response.json();
+
+                if (data.success) {
+                    updateUI(data.status);
+                } else {
+                    throw new Error(data.message || 'Failed to get status');
+                }
+
+                // Update last update time
+                document.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString();
+
+            } catch (error) {
+                console.error('Error fetching status:', error);
+                showAlert('Failed to fetch status: ' + error.message, 'error');
+                updateUIDisconnected();
+            } finally {
+                const btn = document.getElementById('refreshBtn');
+                const icon = document.getElementById('refreshIcon');
+                icon.style.animation = '';
+                btn.disabled = false;
+            }
+        }
+
+        function updateUI(status) {
+            const isConnected = status.whatsapp.connected;
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const statusDetails = document.getElementById('statusDetails');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const qrContainer = document.getElementById('qrContainer');
+
+            // Update status indicator
+            statusDot.className = `status-dot ${isConnected ? 'connected' : 'disconnected'}`;
+            statusText.textContent = isConnected ? 'Connected to WhatsApp' : 'Disconnected - Scan QR to connect';
+
+            // Show/hide elements based on connection status
+            if (isConnected) {
+                statusDetails.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+                qrContainer.classList.add('hidden');
+                stopQRRefresh();
+
+                // Update details
+                document.getElementById('botNumber').textContent =
+                    formatPhoneNumber(status.whatsapp.botNumber) || 'Not available';
+                document.getElementById('lastConnected').textContent =
+                    status.whatsapp.lastConnected ?
+                    new Date(status.whatsapp.lastConnected).toLocaleString() : 'Not available';
+                document.getElementById('redisStatus').textContent =
+                    status.redis.connected ? '✅ Connected' : '❌ Disconnected';
+
+            } else {
+                statusDetails.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+                qrContainer.classList.remove('hidden');
+
+                // Start checking for QR code
+                loadQRCode();
+                startQRRefresh();
+            }
+        }
+
+        function updateUIDisconnected() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+
+            statusDot.className = 'status-dot disconnected';
+            statusText.textContent = 'Unable to reach bot server';
+        }
+
+        async function loadQRCode() {
+            try {
+                const qrImage = document.getElementById('qrImage');
+                const timestamp = new Date().getTime();
+
+                // Try to load QR code image
+                qrImage.src = `${API_BASE}/api/whatsapp/qr?t=${timestamp}`;
+                qrImage.onerror = () => {
+                    // If image fails to load, show message
+                    document.getElementById('qrTimer').textContent =
+                        '⏳ Waiting for QR code generation...';
+                };
+                qrImage.onload = () => {
+                    document.getElementById('qrTimer').textContent =
+                        '⚠️ QR code expires in 20 seconds! Scan quickly.';
+                };
+            } catch (error) {
+                console.error('Error loading QR code:', error);
+            }
+        }
+
+        async function logout() {
+            if (!confirm('Are you sure you want to logout and delete the WhatsApp session? This will disconnect the bot and require scanning QR code again.')) {
+                return;
+            }
+
+            try {
+                const logoutBtn = document.getElementById('logoutBtn');
+                logoutBtn.disabled = true;
+                logoutBtn.innerHTML = '<span class="loading-spinner"></span> <span>Logging out...</span>';
+
+                const response = await fetch(`${API_BASE}/api/whatsapp/disconnect`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Session deleted successfully! The bot will restart and show a new QR code.', 'success');
+
+                    // Wait 2 seconds for bot to restart, then refresh
+                    setTimeout(() => {
+                        refreshStatus();
+                    }, 2000);
+                } else {
+                    throw new Error(data.message || 'Failed to logout');
+                }
+
+            } catch (error) {
+                console.error('Error during logout:', error);
+                showAlert('Failed to logout: ' + error.message, 'error');
+
+                const logoutBtn = document.getElementById('logoutBtn');
+                logoutBtn.disabled = false;
+                logoutBtn.innerHTML = '<span>🚪</span> <span>Logout & Delete Session</span>';
+            }
+        }
+
+        function startAutoRefresh() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+            }
+            refreshTimer = setInterval(refreshStatus, REFRESH_INTERVAL);
+        }
+
+        function startQRRefresh() {
+            if (qrRefreshTimer) {
+                clearInterval(qrRefreshTimer);
+            }
+            qrRefreshTimer = setInterval(loadQRCode, QR_REFRESH_INTERVAL);
+        }
+
+        function stopQRRefresh() {
+            if (qrRefreshTimer) {
+                clearInterval(qrRefreshTimer);
+                qrRefreshTimer = null;
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function formatPhoneNumber(phone) {
+            if (!phone) return null;
+            // Remove @s.whatsapp.net and format nicely
+            return phone.replace('@s.whatsapp.net', '').replace(/(\d{2})(\d{5})(\d{5})/, '+$1 $2-$3');
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (refreshTimer) clearInterval(refreshTimer);
+            if (qrRefreshTimer) clearInterval(qrRefreshTimer);
+        });
+    </script>
+</body>
+</html>

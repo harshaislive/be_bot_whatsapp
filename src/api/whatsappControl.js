@@ -1,13 +1,30 @@
 import { logger } from '../utils/logger.js';
 import { redisService } from '../services/redisService.js';
+import path from 'path';
+import fs from 'fs';
 
 class WhatsAppController {
     constructor() {
         this.bot = null;
+        this.currentQRCode = null;
+        this.qrCodeTimestamp = null;
     }
 
     setBotInstance(botInstance) {
         this.bot = botInstance;
+    }
+
+    // Store QR code when generated
+    setQRCode(qrCode) {
+        this.currentQRCode = qrCode;
+        this.qrCodeTimestamp = Date.now();
+        logger.info('QR code stored for web access');
+    }
+
+    // Clear QR code when connected
+    clearQRCode() {
+        this.currentQRCode = null;
+        this.qrCodeTimestamp = null;
     }
 
     // Force disconnect WhatsApp for re-login
@@ -164,6 +181,49 @@ class WhatsAppController {
             res.status(500).json({
                 success: false,
                 healthy: false,
+                error: error.message
+            });
+        }
+    }
+
+    // Get QR code image for web display
+    async getQRCode(req, res) {
+        try {
+            const qrPath = path.join(process.cwd(), 'logs', 'whatsapp-qr.png');
+
+            // Check if QR code file exists
+            if (fs.existsSync(qrPath)) {
+                const stats = fs.statSync(qrPath);
+                const ageInSeconds = (Date.now() - stats.mtimeMs) / 1000;
+
+                // QR codes expire after 20 seconds, but we'll serve files up to 30 seconds old
+                if (ageInSeconds > 30) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'QR code has expired. Please wait for a new one to be generated.'
+                    });
+                }
+
+                // Set cache headers to prevent browser caching
+                res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+                res.setHeader('Pragma', 'no-cache');
+                res.setHeader('Expires', '0');
+                res.setHeader('Content-Type', 'image/png');
+
+                // Send the QR code image
+                res.sendFile(qrPath);
+            } else {
+                res.status(404).json({
+                    success: false,
+                    message: 'QR code not available. Bot may be connected or waiting to generate QR code.'
+                });
+            }
+
+        } catch (error) {
+            logger.error('Error getting QR code:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to retrieve QR code',
                 error: error.message
             });
         }
