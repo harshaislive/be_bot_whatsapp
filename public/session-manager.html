@@ -349,7 +349,7 @@
                         <span class="detail-value" id="lastConnected">-</span>
                     </div>
                     <div class="detail-row">
-                        <span class="detail-label">Redis Status:</span>
+                        <span class="detail-label">Session Status:</span>
                         <span class="detail-value" id="redisStatus">-</span>
                     </div>
                 </div>
@@ -539,14 +539,14 @@
                     status.whatsapp.lastConnected ?
                     new Date(status.whatsapp.lastConnected).toLocaleString() : 'Not available';
                 document.getElementById('redisStatus').textContent =
-                    status.redis.connected ? '✅ Connected' : '❌ Disconnected';
+                    status.session && status.session.storedInSupabase ? '✅ Session Stored' : '❌ No Session';
 
             } else {
                 statusDetails.classList.add('hidden');
                 qrContainer.classList.remove('hidden');
 
-                // Show logout button if there's a Redis session (stale session)
-                if (status.redis.hasSession || status.whatsapp.lastConnected) {
+                // Show logout button if there's a Supabase session (stale session)
+                if ((status.session && status.session.hasSession) || status.whatsapp.lastConnected) {
                     logoutBtn.classList.remove('hidden');
                     logoutBtn.querySelector('span:last-child').textContent = 'Clear Session & Get Fresh QR';
                 } else {
