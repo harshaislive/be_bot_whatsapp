@@ -39,6 +39,11 @@ router.get('/whatsapp/qr', async (req, res) => {
     await whatsappController.getQRCode(req, res);
 });
 
+// Validate session password
+router.post('/session/validate', async (req, res) => {
+    await whatsappController.validatePassword(req, res);
+});
+
 // API Info
 router.get('/', (req, res) => {
     res.json({
@@ -48,6 +53,7 @@ router.get('/', (req, res) => {
             'POST /api/whatsapp/disconnect': 'Force disconnect WhatsApp for re-login',
             'GET /api/whatsapp/status': 'Get WhatsApp connection status',
             'GET /api/whatsapp/qr': 'Get QR code image',
+            'POST /api/session/validate': 'Validate session manager password',
             'DELETE /api/sessions/clear': 'Clear all sessions',
             'GET /api/health': 'Health check'
         },

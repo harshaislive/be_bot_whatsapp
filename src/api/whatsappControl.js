@@ -1,5 +1,6 @@
 import { logger } from '../utils/logger.js';
 import { redisService } from '../services/redisService.js';
+import { config } from '../config/config.js';
 import path from 'path';
 import fs from 'fs';
 
@@ -224,6 +225,44 @@ class WhatsAppController {
             res.status(500).json({
                 success: false,
                 message: 'Failed to retrieve QR code',
+                error: error.message
+            });
+        }
+    }
+
+    // Validate session manager password
+    async validatePassword(req, res) {
+        try {
+            const { password } = req.body;
+
+            if (!password) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Password is required'
+                });
+            }
+
+            const isValid = password === config.security.sessionPassword;
+
+            if (isValid) {
+                logger.info('Session manager password validated successfully');
+            } else {
+                logger.warn('Invalid session manager password attempt', {
+                    ip: req.ip,
+                    userAgent: req.get('User-Agent')
+                });
+            }
+
+            res.json({
+                success: true,
+                valid: isValid
+            });
+
+        } catch (error) {
+            logger.error('Error validating password:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to validate password',
                 error: error.message
             });
         }

@@ -18,6 +18,10 @@ Or if deployed on a server:
 http://your-server-ip:3000/session
 ```
 
+### Default Password
+
+The default password is `beforest2025`. You can change this in your `.env` file (see Configuration section below).
+
 ## Features
 
 ### 1. **Password Protection**
@@ -81,17 +85,27 @@ http://your-server-ip:3000/session
    - Last connected time
    - Redis connection status
 
-## Security Recommendations
+## Configuration
 
-### Change the Default Password
+### Change the Session Password
 
-1. Open `public/session-manager.html`
-2. Find line 263:
-   ```javascript
-   const VALID_PASSWORD = 'beforest2025'; // Change this to your desired password
+The session manager password is now configured via environment variable for better security.
+
+1. Open your `.env` file (or create one from `.env.example`)
+2. Add or modify this line:
    ```
-3. Change `beforest2025` to your secure password
-4. Save the file and restart the bot
+   SESSION_PASSWORD=your-secure-password-here
+   ```
+3. Save the file and restart the bot
+
+**Example:**
+```
+SESSION_PASSWORD=MySecureP@ssw0rd2025!
+```
+
+If `SESSION_PASSWORD` is not set in `.env`, it defaults to `beforest2025`.
+
+## Security Recommendations
 
 ### Additional Security
 
@@ -100,8 +114,9 @@ For production environments, consider:
 1. **Use HTTPS** - Deploy behind a reverse proxy with SSL
 2. **IP Whitelisting** - Restrict access to specific IPs
 3. **VPN Access** - Require VPN connection to access
-4. **Environment Variables** - Move password to `.env` file
+4. **Strong Password** - Use a complex password with special characters
 5. **Session Timeout** - Add automatic logout after inactivity
+6. **Change Default Password** - Always change from the default `beforest2025`
 
 ## API Endpoints Used
 
@@ -111,6 +126,7 @@ The session manager uses these API endpoints:
 |----------|--------|---------|
 | `/api/whatsapp/status` | GET | Get current connection status |
 | `/api/whatsapp/qr` | GET | Retrieve QR code image |
+| `/api/session/validate` | POST | Validate session password |
 | `/api/whatsapp/disconnect` | POST | Logout and delete session |
 
 ## Troubleshooting
@@ -136,9 +152,10 @@ The session manager uses these API endpoints:
 
 ### Password Not Working
 
-- **Check**: Did you change the password in the HTML file?
-- **Solution**: Look at line 263 in `public/session-manager.html`
-- **Verify**: Make sure you saved the file after changing
+- **Check**: Is `SESSION_PASSWORD` set correctly in `.env` file?
+- **Solution**: Open `.env` and verify the password value
+- **Verify**: Restart the bot after changing the password
+- **Default**: If no password is set, the default is `beforest2025`
 
 ### Page Shows "Unable to reach bot server"
 

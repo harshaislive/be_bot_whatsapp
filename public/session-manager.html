@@ -409,9 +409,8 @@
         let isAuthenticated = false;
         let currentPassword = '';
 
-        // Check if password is required (you can set this via environment variable)
+        // Password is now validated via API (set in .env file)
         const PASSWORD_REQUIRED = true;
-        const VALID_PASSWORD = 'beforest2025'; // Change this to your desired password
 
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', () => {
@@ -434,19 +433,45 @@
             document.getElementById('mainContent').classList.remove('hidden');
         }
 
-        function authenticate(event) {
+        async function authenticate(event) {
             event.preventDefault();
             const password = document.getElementById('passwordInput').value;
+            const submitBtn = event.target.querySelector('button[type="submit"]');
 
-            if (password === VALID_PASSWORD) {
-                isAuthenticated = true;
-                currentPassword = password;
-                hideAuthForm();
-                initializeApp();
-                showAlert('Successfully authenticated!', 'success');
-            } else {
-                showAlert('Invalid password. Please try again.', 'error');
-                document.getElementById('passwordInput').value = '';
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading-spinner"></span> <span>Verifying...</span>';
+
+            try {
+                // Validate password via API
+                const response = await fetch(`${API_BASE}/api/session/validate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.valid) {
+                    isAuthenticated = true;
+                    currentPassword = password;
+                    hideAuthForm();
+                    initializeApp();
+                    showAlert('Successfully authenticated!', 'success');
+                } else {
+                    showAlert('Invalid password. Please try again.', 'error');
+                    document.getElementById('passwordInput').value = '';
+                }
+
+            } catch (error) {
+                console.error('Authentication error:', error);
+                showAlert('Failed to authenticate. Please try again.', 'error');
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>Unlock Session Manager</span>';
             }
         }
 

@@ -30,7 +30,8 @@ export const config = {
     // Security
     security: {
         jwtSecret: process.env.JWT_SECRET,
-        encryptionKey: process.env.ENCRYPTION_KEY
+        encryptionKey: process.env.ENCRYPTION_KEY,
+        sessionPassword: process.env.SESSION_PASSWORD || 'beforest2025' // Default password
     },
 
     // Rate Limiting
