@@ -173,6 +173,27 @@ class EnterpriseWhatsAppBot {
                     shouldReconnect
                 });
 
+                // Handle 401 errors (invalid/stale session) - clear session and restart for fresh QR
+                if (statusCode === 401) {
+                    console.log('🔄 Invalid session detected (401) - clearing and restarting for fresh QR...');
+                    logger.info('Clearing stale session due to 401 error and restarting');
+
+                    // Clear Supabase session
+                    try {
+                        await supabaseService.deleteWhatsAppSession();
+                        console.log('🗑️ Stale session cleared from Supabase');
+                    } catch (err) {
+                        logger.warn('Error clearing Supabase session:', err);
+                    }
+
+                    // Restart after short delay to generate fresh QR
+                    setTimeout(() => {
+                        console.log('♻️ Restarting bot for fresh QR code generation...');
+                        this.start();
+                    }, 3000);
+                    return;
+                }
+
                 if (shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
                     this.reconnectAttempts++;
 
