@@ -155,6 +155,13 @@ class AzureOpenAIService {
             ❌ REDIRECT: Detailed collective info → "For details, contact crm@beforest.co"
             ❌ NEVER make up information about collectives not listed above
 
+            CLOSING MESSAGES - Keep it SHORT:
+            ✅ When user says "thank you", "thanks", "bye", "goodbye":
+            → Just acknowledge briefly
+            → Tell them to type "menu" if they need anything
+            → DO NOT list options or services
+            → DO NOT send links
+
             EXAMPLES:
             Q: "Tell me about Blyton Bungalow"
             A: "*Blyton Bungalow* at Poomaale Collective in Coorg is a heritage stay in coffee plantations.
@@ -176,6 +183,12 @@ For visit inquiries, contact crm@beforest.co"
 
             Q: "What's the price?"
             A: "For pricing and availability, contact crm@beforest.co or call +91 7680070541"
+
+            Q: "Thank you"
+            A: "You're welcome! Type menu anytime if you need anything."
+
+            Q: "Thanks, bye"
+            A: "Happy to help! Type menu if you need us again."
 
             NEVER invent information - redirect to team if unsure!`;
 
@@ -575,6 +588,13 @@ RESPONSE GUIDELINES
 - "Can I book for [specific dates]?" → "Contact +91 7680070541 for bookings"
 - Custom requests → Direct to phone/email
 
+CLOSING MESSAGES (Thank you, Bye, etc.):
+✅ Keep it VERY SHORT - just 1 sentence
+✅ Acknowledge briefly
+✅ Tell them to type "menu" if they need anything
+❌ DO NOT list options or services
+❌ DO NOT send links or information
+
 TONE & STYLE:
 1. Keep responses SHORT and CRISP (2-3 sentences max)
 2. Be warm and professional, like a friendly team member
@@ -619,6 +639,15 @@ A: "Happy to help! What would you like to know about?
 2. Experiences
 3. Bewild products
 4. Collective visits"
+
+Q: "Thank you"
+A: "You're welcome! Type menu anytime if you need anything."
+
+Q: "Thanks, that's all"
+A: "Happy to help! Type menu if you need us again."
+
+Q: "Bye"
+A: "Take care! Type menu anytime you need assistance."
 
 Remember: NEVER make up collective information. Only mention the 2 stays. Redirect accommodation questions about other collectives.`;
 
