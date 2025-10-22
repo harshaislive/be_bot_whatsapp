@@ -941,7 +941,10 @@ Discover Bewild Produce at https://bewild.life/`;
                 console.log('📄 Using dynamic contact team template from database');
             } else {
                 // Fallback to hardcoded message
-                message = `For general queries, please write to crm@beforest.co to help us keep a clear record and provide detailed resolutions. You can also call us on +91 7680070541, Monday to Friday, 10 am to 6 pm.`;
+                message = `For general queries, please write to *crm@beforest.co* to help us keep a clear record and provide detailed resolutions.
+
+You can also call us on *+91 7680070541*
+Monday to Friday, 10 am to 6 pm.`;
                 console.log('⚠️  Using fallback contact team message - template not found');
             }
 
@@ -956,7 +959,10 @@ Discover Bewild Produce at https://bewild.life/`;
         } catch (error) {
             logger.error('Error in handleContactTeam:', error);
             // Emergency fallback
-            const fallbackMessage = `For general queries, please write to crm@beforest.co to help us keep a clear record and provide detailed resolutions. You can also call us on +91 7680070541, Monday to Friday, 10 am to 6 pm.`;
+            const fallbackMessage = `For general queries, please write to *crm@beforest.co* to help us keep a clear record and provide detailed resolutions.
+
+You can also call us on *+91 7680070541*
+Monday to Friday, 10 am to 6 pm.`;
 
             await this.sendContinueTypingMessage(userPhone, fallbackMessage, 300);
             console.log('📤 Sent emergency fallback contact team message');
@@ -977,7 +983,10 @@ Refer to this link to learn more and book your stay. https://hospitality.befores
         } else if (accommodationType === 'glamping') {
             const message = `Glamping, Hyderabad Collective
 
-Luxury tents with modern amenities set amidst striking rockscapes in a farming collective. Refer to this link to learn more and book your stay. https://docs.google.com/forms/d/e/1FAIpQLSfnJDGgi6eSbx-pVdPrZQvgkqlxFuPja4UGaYLLyRBmYzx_zg/viewform`;
+Luxury tents with modern amenities set amidst striking rockscapes in a farming collective.
+
+Refer to this link to learn more and book your stay:
+https://docs.google.com/forms/d/e/1FAIpQLSfnJDGgi6eSbx-pVdPrZQvgkqlxFuPja4UGaYLLyRBmYzx_zg/viewform`;
 
             await this.sendContinueTypingMessage(userPhone, message, 300);
             console.log('📤 Sent Glamping direct info');
